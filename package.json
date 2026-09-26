@@ -1,0 +1,26 @@
+{
+  "name": "stocksense",
+  "version": "1.0.0",
+  "description": "StockSense - Modular Inventory Management System",
+  "private": true,
+  "scripts": {
+    "server": "npm run dev --prefix server",
+    "client": "npm run dev --prefix client",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "build:client": "npm run build --prefix client",
+    "install:all": "npm install && npm install --prefix server && npm install --prefix client",
+    "test:server": "npm test --prefix server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "keywords": [
+    "inventory",
+    "mern",
+    "warehouse",
+    "management",
+    "stock"
+  ],
+  "author": "StockSense Team",
+  "license": "ISC"
+}
