@@ -51,4 +51,8 @@ router.use('/transfers', transferRoutes);
 const adjustmentRoutes = require('./adjustment.routes');
 router.use('/adjustments', adjustmentRoutes);
 
+// Stock Ledger Routes
+const ledgerRoutes = require('./ledger.routes');
+router.use('/ledger', ledgerRoutes);
+
 module.exports = router;
