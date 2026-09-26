@@ -36,13 +36,6 @@ const createReceipt = async (data, userId = null) => {
     throw error;
   }
 
-  const warehouseDoc = await Warehouse.findById(targetWarehouseId);
-  if (!warehouseDoc) {
-    const error = new Error('Target warehouse does not exist');
-    error.statusCode = 400;
-    throw error;
-  }
-
   // Support items array or products array
   const rawItems = items || products || [];
   if (!Array.isArray(rawItems) || rawItems.length === 0) {
@@ -51,8 +44,7 @@ const createReceipt = async (data, userId = null) => {
     throw error;
   }
 
-  // Validate items
-  const formattedItems = [];
+  // Synchronously validate item schemas and quantities first
   for (const item of rawItems) {
     const prodId = item.product?._id || item.product || item.productId;
     const qty = Number(item.quantity ?? item.quantityReceived);
@@ -68,6 +60,20 @@ const createReceipt = async (data, userId = null) => {
       error.statusCode = 400;
       throw error;
     }
+  }
+
+  const warehouseDoc = await Warehouse.findById(targetWarehouseId);
+  if (!warehouseDoc) {
+    const error = new Error('Target warehouse does not exist');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Validate items in database
+  const formattedItems = [];
+  for (const item of rawItems) {
+    const prodId = item.product?._id || item.product || item.productId;
+    const qty = Number(item.quantity ?? item.quantityReceived);
 
     const productDoc = await Product.findById(prodId);
     if (!productDoc) {

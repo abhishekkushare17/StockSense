@@ -36,13 +36,6 @@ const createDelivery = async (data, userId = null) => {
     throw error;
   }
 
-  const warehouseDoc = await Warehouse.findById(targetWarehouseId);
-  if (!warehouseDoc) {
-    const error = new Error('Source warehouse does not exist');
-    error.statusCode = 400;
-    throw error;
-  }
-
   const rawItems = items || products || [];
   if (!Array.isArray(rawItems) || rawItems.length === 0) {
     const error = new Error('Delivery order must contain at least one product item');
@@ -50,7 +43,7 @@ const createDelivery = async (data, userId = null) => {
     throw error;
   }
 
-  const formattedItems = [];
+  // Synchronously validate item schemas and quantities first
   for (const item of rawItems) {
     const prodId = item.product?._id || item.product || item.productId;
     const qty = Number(item.quantity ?? item.quantityDelivered);
@@ -66,6 +59,19 @@ const createDelivery = async (data, userId = null) => {
       error.statusCode = 400;
       throw error;
     }
+  }
+
+  const warehouseDoc = await Warehouse.findById(targetWarehouseId);
+  if (!warehouseDoc) {
+    const error = new Error('Source warehouse does not exist');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const formattedItems = [];
+  for (const item of rawItems) {
+    const prodId = item.product?._id || item.product || item.productId;
+    const qty = Number(item.quantity ?? item.quantityDelivered);
 
     const productDoc = await Product.findById(prodId);
     if (!productDoc) {

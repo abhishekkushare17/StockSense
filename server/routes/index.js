@@ -55,4 +55,8 @@ router.use('/adjustments', adjustmentRoutes);
 const ledgerRoutes = require('./ledger.routes');
 router.use('/ledger', ledgerRoutes);
 
+// Dashboard Analytics Routes
+const dashboardRoutes = require('./dashboard.routes');
+router.use('/dashboard', dashboardRoutes);
+
 module.exports = router;

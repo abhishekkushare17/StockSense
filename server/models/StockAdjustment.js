@@ -15,6 +15,9 @@ const adjustmentItemSchema = new mongoose.Schema(
     },
     recordedQuantity: {
       type: Number,
+      default: function () {
+        return this.oldQuantity;
+      },
       min: [0, 'Recorded quantity cannot be negative']
     },
     newQuantity: {
@@ -24,10 +27,21 @@ const adjustmentItemSchema = new mongoose.Schema(
     },
     physicalQuantity: {
       type: Number,
+      default: function () {
+        return this.newQuantity;
+      },
       min: [0, 'Physical counted quantity cannot be negative']
     },
     difference: {
-      type: Number
+      type: Number,
+      default: function () {
+        const p = this.physicalQuantity !== undefined ? this.physicalQuantity : this.newQuantity;
+        const r = this.recordedQuantity !== undefined ? this.recordedQuantity : this.oldQuantity;
+        if (p !== undefined && r !== undefined) {
+          return p - r;
+        }
+        return 0;
+      }
     },
     reason: {
       type: String,
@@ -38,7 +52,7 @@ const adjustmentItemSchema = new mongoose.Schema(
   { _id: true }
 );
 
-adjustmentItemSchema.pre('validate', function (next) {
+adjustmentItemSchema.pre('validate', function () {
   if (this.oldQuantity !== undefined && this.recordedQuantity === undefined) {
     this.recordedQuantity = this.oldQuantity;
   }
@@ -56,8 +70,6 @@ adjustmentItemSchema.pre('validate', function (next) {
   if (this.newQuantity !== undefined && this.oldQuantity !== undefined) {
     this.difference = this.newQuantity - this.oldQuantity;
   }
-
-  next();
 });
 
 const stockAdjustmentSchema = new mongoose.Schema(
@@ -107,10 +119,29 @@ const stockAdjustmentSchema = new mongoose.Schema(
   }
 );
 
-stockAdjustmentSchema.pre('validate', function (next) {
+stockAdjustmentSchema.pre('validate', function () {
   if (this.createdBy && !this.adjustedBy) this.adjustedBy = this.createdBy;
   if (this.adjustedBy && !this.createdBy) this.createdBy = this.adjustedBy;
-  next();
+
+  if (this.items && Array.isArray(this.items)) {
+    for (const item of this.items) {
+      if (item.oldQuantity !== undefined && item.recordedQuantity === undefined) {
+        item.recordedQuantity = item.oldQuantity;
+      }
+      if (item.recordedQuantity !== undefined && item.oldQuantity === undefined) {
+        item.oldQuantity = item.recordedQuantity;
+      }
+      if (item.newQuantity !== undefined && item.physicalQuantity === undefined) {
+        item.physicalQuantity = item.newQuantity;
+      }
+      if (item.physicalQuantity !== undefined && item.newQuantity === undefined) {
+        item.newQuantity = item.physicalQuantity;
+      }
+      if (item.newQuantity !== undefined && item.oldQuantity !== undefined) {
+        item.difference = item.newQuantity - item.oldQuantity;
+      }
+    }
+  }
 });
 
 stockAdjustmentSchema.virtual('products').get(function () {
