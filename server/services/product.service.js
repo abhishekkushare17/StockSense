@@ -28,7 +28,7 @@ const createProduct = async (data, userId = null) => {
 
   const targetSku = (sku || code || '').trim().toUpperCase();
 
-  // 1. Validate required fields
+  // 1. Validate required fields and inputs
   if (!name || !name.trim()) {
     const error = new Error('Product name is required');
     error.statusCode = 400;
@@ -47,13 +47,27 @@ const createProduct = async (data, userId = null) => {
     throw error;
   }
 
-  // 2. Validate category exists
   if (!mongoose.Types.ObjectId.isValid(category)) {
     const error = new Error('Invalid category ID format');
     error.statusCode = 400;
     throw error;
   }
 
+  const parsedReorderLevel = Number(reorderLevel) || 0;
+  if (parsedReorderLevel < 0) {
+    const error = new Error('Reorder level cannot be negative');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const parsedInitialStock = Number(initialStock) || 0;
+  if (parsedInitialStock < 0) {
+    const error = new Error('Initial stock cannot be negative');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // 2. Validate category exists in database
   const categoryExists = await Category.findById(category);
   if (!categoryExists) {
     const error = new Error('Category does not exist in the database');
@@ -65,21 +79,6 @@ const createProduct = async (data, userId = null) => {
   const existingProduct = await Product.findOne({ sku: targetSku });
   if (existingProduct) {
     const error = new Error(`Product with SKU '${targetSku}' already exists`);
-    error.statusCode = 400;
-    throw error;
-  }
-
-  // 4. Validate reorderLevel and initialStock
-  const parsedReorderLevel = Number(reorderLevel) || 0;
-  if (parsedReorderLevel < 0) {
-    const error = new Error('Reorder level cannot be negative');
-    error.statusCode = 400;
-    throw error;
-  }
-
-  const parsedInitialStock = Number(initialStock) || 0;
-  if (parsedInitialStock < 0) {
-    const error = new Error('Initial stock cannot be negative');
     error.statusCode = 400;
     throw error;
   }

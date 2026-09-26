@@ -4,7 +4,10 @@ const {
   validateRegister,
   validateLogin,
   validateUpdateProfile,
-  validateChangePassword
+  validateChangePassword,
+  validateCreateProduct,
+  validateCreateCategory,
+  validateCreateWarehouse
 } = require('./validate.middleware');
 const asyncHandler = require('./async.middleware');
 
@@ -17,5 +20,8 @@ module.exports = {
   validateLogin,
   validateUpdateProfile,
   validateChangePassword,
+  validateCreateProduct,
+  validateCreateCategory,
+  validateCreateWarehouse,
   asyncHandler
 };

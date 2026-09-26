@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const { errorResponse } = require('../utils/apiResponse');
 const { ALL_ROLES } = require('../utils/constants');
 
@@ -89,9 +90,84 @@ const validateChangePassword = (req, res, next) => {
   next();
 };
 
+/**
+ * Validate Product Creation payload
+ */
+const validateCreateProduct = (req, res, next) => {
+  const { name, sku, code, category, reorderLevel, initialStock, warehouseId } = req.body;
+
+  if (!name || !name.trim()) {
+    return errorResponse(res, 'Product name is required and cannot be empty.', 400);
+  }
+
+  const targetSku = (sku || code || '').trim();
+  if (!targetSku) {
+    return errorResponse(res, 'Product SKU/code is required.', 400);
+  }
+
+  if (!category) {
+    return errorResponse(res, 'Category is required.', 400);
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(category)) {
+    return errorResponse(res, 'Category ID must be a valid ObjectId.', 400);
+  }
+
+  if (reorderLevel !== undefined && Number(reorderLevel) < 0) {
+    return errorResponse(res, 'Reorder level cannot be negative.', 400);
+  }
+
+  if (initialStock !== undefined && Number(initialStock) < 0) {
+    return errorResponse(res, 'Initial stock cannot be negative.', 400);
+  }
+
+  if (warehouseId && !mongoose.Types.ObjectId.isValid(warehouseId)) {
+    return errorResponse(res, 'Warehouse ID must be a valid ObjectId.', 400);
+  }
+
+  next();
+};
+
+/**
+ * Validate Category Creation payload
+ */
+const validateCreateCategory = (req, res, next) => {
+  const { name, code } = req.body;
+
+  if (!name || !name.trim()) {
+    return errorResponse(res, 'Category name is required and cannot be empty.', 400);
+  }
+
+  if (!code || !code.trim()) {
+    return errorResponse(res, 'Category code is required and cannot be empty.', 400);
+  }
+
+  next();
+};
+
+/**
+ * Validate Warehouse Creation payload
+ */
+const validateCreateWarehouse = (req, res, next) => {
+  const { name, code } = req.body;
+
+  if (!name || !name.trim()) {
+    return errorResponse(res, 'Warehouse name is required and cannot be empty.', 400);
+  }
+
+  if (!code || !code.trim()) {
+    return errorResponse(res, 'Warehouse code is required and cannot be empty.', 400);
+  }
+
+  next();
+};
+
 module.exports = {
   validateRegister,
   validateLogin,
   validateUpdateProfile,
-  validateChangePassword
+  validateChangePassword,
+  validateCreateProduct,
+  validateCreateCategory,
+  validateCreateWarehouse
 };

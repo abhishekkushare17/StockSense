@@ -2,12 +2,11 @@ const express = require('express');
 const router = express.Router();
 const productController = require('../controllers/product.controller');
 const { protect } = require('../middleware/auth.middleware');
+const { validateCreateProduct } = require('../middleware/validate.middleware');
 
-// Public or Protected - enable optional protect if token present, or enforce protect
-// Enforce protect for write operations; allow read operations
 router.route('/')
   .get(productController.getProducts)
-  .post(protect, productController.createProduct);
+  .post(protect, validateCreateProduct, productController.createProduct);
 
 router.route('/:id')
   .get(productController.getProductById)
