@@ -3,8 +3,12 @@ import { useAuth } from '../hooks/useAuth';
 import KPICards from '../components/dashboard/KPICards';
 import RecentActivityTable from '../components/dashboard/RecentActivityTable';
 import LowStockAlerts from '../components/dashboard/LowStockAlerts';
-import api from '../services/api';
-import { Sparkles, RefreshCw } from 'lucide-react';
+import {
+  getDashboardSummary,
+  getRecentMovements,
+  getLowStockAlerts
+} from '../services/dashboardService';
+import { Sparkles, RefreshCw, AlertCircle } from 'lucide-react';
 import { Button } from '../components/common';
 
 export const DashboardPage = () => {
@@ -13,6 +17,7 @@ export const DashboardPage = () => {
   const [activities, setActivities] = useState([]);
   const [lowStockItems, setLowStockItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -21,23 +26,20 @@ export const DashboardPage = () => {
   const fetchDashboardData = async () => {
     try {
       setIsLoading(true);
-      const [sumRes, actRes, stockRes] = await Promise.allSettled([
-        api.get('/dashboard/summary'),
-        api.get('/ledger?limit=10'),
-        api.get('/stock?lowStock=true')
+      setError(null);
+
+      const [summaryData, movementsData, alertsData] = await Promise.all([
+        getDashboardSummary(),
+        getRecentMovements(10),
+        getLowStockAlerts()
       ]);
 
-      if (sumRes.status === 'fulfilled') {
-        setSummary(sumRes.value.data?.data || {});
-      }
-      if (actRes.status === 'fulfilled') {
-        setActivities(actRes.value.data?.data?.entries || []);
-      }
-      if (stockRes.status === 'fulfilled') {
-        setLowStockItems(stockRes.value.data?.data?.stocks || []);
-      }
+      setSummary(summaryData);
+      setActivities(movementsData);
+      setLowStockItems(alertsData);
     } catch (err) {
-      console.error('Error fetching dashboard data:', err);
+      console.error('Failed to load dashboard data from backend:', err);
+      setError(err.message || 'Failed to load real-time inventory metrics.');
     } finally {
       setIsLoading(false);
     }
@@ -65,13 +67,31 @@ export const DashboardPage = () => {
             variant="secondary"
             size="sm"
             onClick={fetchDashboardData}
+            isLoading={isLoading}
             icon={RefreshCw}
             className="bg-white/10 hover:bg-white/20 text-white border-white/20 text-xs"
           >
-            Refresh Data
+            Refresh Live Data
           </Button>
         </div>
       </div>
+
+      {/* Global Error Banner */}
+      {error && (
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button
+            type="button"
+            onClick={fetchDashboardData}
+            className="underline font-bold hover:text-rose-900"
+          >
+            Try Again
+          </button>
+        </div>
+      )}
 
       {/* 6 KPI Cards Grid */}
       <section aria-label="Key Performance Indicators">
