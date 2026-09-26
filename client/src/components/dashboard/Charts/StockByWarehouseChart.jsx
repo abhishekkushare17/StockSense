@@ -48,10 +48,10 @@ export const StockByWarehouseChart = ({ data = [], isLoading = false }) => {
                 tick={{ fontSize: 11, fill: '#4B5563' }}
                 tickLine={false}
                 axisLine={false}
-                width={90}
+                width={130}
               />
               <Tooltip
-                formatter={(val) => [`${val.toLocaleString()} units`, 'Stock Volume']}
+                formatter={(val) => [`${(val || 0).toLocaleString()} units`, 'Stock Volume']}
                 contentStyle={{
                   backgroundColor: '#FFFFFF',
                   borderRadius: '12px',

@@ -212,7 +212,11 @@ export const DashboardPage = () => {
   // Transform Stock by Warehouse Chart Data
   const warehouseChartData = useMemo(() => {
     if (warehouseStockData && warehouseStockData.length > 0) {
-      return warehouseStockData;
+      return warehouseStockData.map((item) => ({
+        name: item.name || 'Warehouse',
+        value: Number(item.totalStock ?? item.value ?? 0),
+        code: item.code || ''
+      }));
     }
     const map = new Map();
     allStocks.forEach((item) => {
@@ -315,14 +319,49 @@ export const DashboardPage = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* 🧠 SECTION: STOCKSENSE INTELLIGENCE PLATFORM (PRIORITIZED AT TOP)        */}
+      {/* 📊 SECTION: TOP SIDE INVENTORY METRICS & VISUAL GRAPHS                     */}
       {/* ========================================================================= */}
       <section className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="w-2.5 h-6 bg-indigo-600 rounded-full" />
             <h2 className="text-lg font-black tracking-tight text-gray-900 uppercase">
-              StockSense Intelligence
+              Inventory Foundation & Live Analytics
+            </h2>
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
+              Top Overview
+            </span>
+          </div>
+        </div>
+
+        {/* 7 Standard KPIs */}
+        <KPICards summary={summary} isLoading={isLoading} />
+
+        {/* Real-time Filter Bar */}
+        <DashboardFilters
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onReset={handleResetFilters}
+        />
+
+        {/* Visual Charts Grid (The 4 Graphs) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <StockByCategoryChart data={categoryChartData} isLoading={isLoading} />
+          <StockMovementChart data={movementChartData} isLoading={isLoading} />
+          <IncomingVsOutgoingChart data={incomingOutgoingData} isLoading={isLoading} />
+          <StockByWarehouseChart data={warehouseChartData} isLoading={isLoading} />
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 🧠 SECTION: STOCKSENSE INTELLIGENCE PLATFORM                              */}
+      {/* ========================================================================= */}
+      <section className="space-y-6 pt-4 border-t border-gray-200">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-6 bg-indigo-600 rounded-full" />
+            <h2 className="text-lg font-black tracking-tight text-gray-900 uppercase">
+              StockSense Intelligence & Actions
             </h2>
             <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
               Live Heuristics & Forecasting
@@ -373,20 +412,17 @@ export const DashboardPage = () => {
       </section>
 
       {/* ========================================================================= */}
-      {/* 📊 SECTION: CORE INVENTORY METRICS & REORDER HEALTH                       */}
+      {/* ⚙️ SECTION: REORDER HEALTH & RECENT ACTIVITY                              */}
       {/* ========================================================================= */}
       <section className="space-y-6 pt-4 border-t border-gray-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="w-2.5 h-6 bg-slate-800 rounded-full" />
             <h2 className="text-lg font-black tracking-tight text-gray-900 uppercase">
-              Inventory Foundation & KPIs
+              Reorder Health & Operations Ledger
             </h2>
           </div>
         </div>
-
-        {/* 7 Standard KPIs */}
-        <KPICards summary={summary} isLoading={isLoading} />
 
         {/* Smart Reorder & Circular Health Gauge */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -400,21 +436,6 @@ export const DashboardPage = () => {
           <div className="lg:col-span-5">
             <InventoryHealthWidget healthData={summary.inventoryHealth} />
           </div>
-        </div>
-
-        {/* Real-time Filter Bar */}
-        <DashboardFilters
-          filters={filters}
-          onFilterChange={handleFilterChange}
-          onReset={handleResetFilters}
-        />
-
-        {/* Visual Charts Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <StockByCategoryChart data={categoryChartData} />
-          <StockMovementChart data={movementChartData} />
-          <IncomingVsOutgoingChart data={incomingOutgoingData} />
-          <StockByWarehouseChart data={warehouseChartData} />
         </div>
 
         {/* Live Activity & Low Stock Alerts */}
