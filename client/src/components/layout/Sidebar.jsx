@@ -58,33 +58,39 @@ export const Sidebar = ({ isOpen, onClose }) => {
   const isInventoryManager = user?.role === ROLES.INVENTORY_MANAGER;
 
   const navItemClass = ({ isActive }) =>
-    `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all group ${
+    `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group relative ${
       isActive
-        ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200'
-        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+        ? 'bg-gradient-to-r from-purple-600 via-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-600/35 border border-purple-400/40 font-bold'
+        : 'text-slate-300 hover:text-white hover:bg-white/5'
     }`;
 
   const subNavItemClass = ({ isActive }) =>
     `flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
       isActive
-        ? 'bg-indigo-50 text-indigo-700 font-semibold'
-        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+        ? 'bg-purple-500/20 text-purple-200 font-semibold border-l-2 border-purple-400 shadow-sm shadow-purple-900/40'
+        : 'text-slate-400 hover:text-slate-100 hover:bg-white/5'
     }`;
 
   const sidebarContent = (
-    <div className="h-full flex flex-col justify-between bg-white border-r border-gray-200 w-64 select-none">
+    <div className="h-full flex flex-col justify-between bg-[#0B0F17] border-r border-purple-500/15 w-64 select-none relative overflow-hidden text-slate-200">
+      {/* Ambient Purple Light Blooms */}
+      <div className="absolute -top-12 -left-12 w-48 h-48 bg-purple-600/25 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/3 -right-16 w-44 h-44 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-10 -left-10 w-44 h-44 bg-purple-500/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-purple-500/10 to-transparent pointer-events-none" />
+
       {/* Brand Header */}
-      <div>
-        <div className="h-16 flex items-center justify-between px-5 border-b border-gray-100">
+      <div className="relative z-10">
+        <div className="h-16 flex items-center justify-between px-5 border-b border-purple-500/15 bg-slate-950/40 backdrop-blur-md">
           <NavLink to="/dashboard" className="flex items-center gap-2.5 group">
-            <Logo size="md" subtitle="Inventory OS" />
+            <Logo size="md" subtitle="Inventory OS" lightText={true} />
           </NavLink>
 
           {/* Close button for mobile drawer */}
           <button
             type="button"
             onClick={onClose}
-            className="lg:hidden p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10"
             aria-label="Close sidebar"
           >
             <X className="w-5 h-5" />
@@ -92,10 +98,10 @@ export const Sidebar = ({ isOpen, onClose }) => {
         </div>
 
         {/* Navigation Categories */}
-        <nav className="p-4 space-y-6 overflow-y-auto max-h-[calc(100vh-10rem)]">
+        <nav className="p-4 space-y-6 overflow-y-auto max-h-[calc(100vh-10rem)] [scrollbar-width:thin] [scrollbar-color:#3b2d54_transparent] hover:[scrollbar-color:#6b21a8_transparent]">
           {/* Main Group */}
           <div className="space-y-1">
-            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
               Overview
             </p>
             <NavLink to="/dashboard" className={navItemClass}>
@@ -119,19 +125,19 @@ export const Sidebar = ({ isOpen, onClose }) => {
               <span>Stock Levels</span>
             </NavLink>
             <NavLink to="/scanner" className={navItemClass}>
-              <QrCode className="w-4 h-4 shrink-0 text-indigo-500" />
+              <QrCode className="w-4 h-4 shrink-0 text-purple-400" />
               <span>Barcode Scanner</span>
             </NavLink>
           </div>
 
           {/* Operations Group (Expandable) */}
           <div className="space-y-1">
-            <div className="flex items-center justify-between px-3 text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">
+            <div className="flex items-center justify-between px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
               <span>Operations</span>
               <button
                 type="button"
                 onClick={() => setOperationsOpen(!operationsOpen)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-slate-400 hover:text-white"
                 aria-label="Toggle operations menu"
               >
                 <ChevronDown
@@ -143,21 +149,21 @@ export const Sidebar = ({ isOpen, onClose }) => {
             </div>
 
             {operationsOpen && (
-              <div className="space-y-1 pl-2 border-l border-gray-100 ml-3">
+              <div className="space-y-1 pl-2 border-l border-purple-500/20 ml-3">
                 <NavLink to="/receipts" className={subNavItemClass}>
-                  <ClipboardList className="w-3.5 h-3.5 shrink-0 text-emerald-600" />
+                  <ClipboardList className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
                   <span>Receipts</span>
                 </NavLink>
                 <NavLink to="/deliveries" className={subNavItemClass}>
-                  <Truck className="w-3.5 h-3.5 shrink-0 text-purple-600" />
+                  <Truck className="w-3.5 h-3.5 shrink-0 text-purple-400" />
                   <span>Deliveries</span>
                 </NavLink>
                 <NavLink to="/transfers" className={subNavItemClass}>
-                  <ArrowRightLeft className="w-3.5 h-3.5 shrink-0 text-amber-600" />
+                  <ArrowRightLeft className="w-3.5 h-3.5 shrink-0 text-amber-400" />
                   <span>Internal Transfers</span>
                 </NavLink>
                 <NavLink to="/adjustments" className={subNavItemClass}>
-                  <SlidersHorizontal className="w-3.5 h-3.5 shrink-0 text-indigo-600" />
+                  <SlidersHorizontal className="w-3.5 h-3.5 shrink-0 text-indigo-400" />
                   <span>Adjustments</span>
                 </NavLink>
               </div>
@@ -166,31 +172,31 @@ export const Sidebar = ({ isOpen, onClose }) => {
 
           {/* StockSense Intelligence Group */}
           <div className="space-y-1">
-            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-indigo-500 mb-2 flex items-center justify-between">
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-purple-400 mb-2 flex items-center justify-between">
               <span>Intelligence</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shadow-sm shadow-purple-400 animate-pulse" />
             </p>
             <NavLink to="/forecast" className={navItemClass}>
-              <TrendingDown className="w-4 h-4 shrink-0 text-indigo-500" />
+              <TrendingDown className="w-4 h-4 shrink-0 text-purple-400" />
               <span>Stock Forecast</span>
             </NavLink>
             <NavLink to="/risk-radar" className={navItemClass}>
-              <Radar className="w-4 h-4 shrink-0 text-rose-500" />
+              <Radar className="w-4 h-4 shrink-0 text-rose-400" />
               <span>Risk Radar</span>
             </NavLink>
             <NavLink to="/anomalies" className={navItemClass}>
-              <ShieldAlert className="w-4 h-4 shrink-0 text-amber-500" />
+              <ShieldAlert className="w-4 h-4 shrink-0 text-amber-400" />
               <span>Anomalies</span>
             </NavLink>
             <NavLink to="/simulator" className={navItemClass}>
-              <Layers className="w-4 h-4 shrink-0 text-emerald-500" />
+              <Layers className="w-4 h-4 shrink-0 text-emerald-400" />
               <span>What-If Simulator</span>
             </NavLink>
           </div>
 
           {/* Intelligence & Audit Group */}
           <div className="space-y-1">
-            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
               Auditing & Reports
             </p>
             <NavLink to="/move-history" className={navItemClass}>
@@ -206,14 +212,14 @@ export const Sidebar = ({ isOpen, onClose }) => {
               <span>Reports</span>
             </NavLink>
             <NavLink to="/audit-logs" className={navItemClass}>
-              <ShieldAlert className="w-4 h-4 shrink-0 text-rose-500" />
+              <ShieldAlert className="w-4 h-4 shrink-0 text-rose-400" />
               <span>Audit Log</span>
             </NavLink>
           </div>
 
           {/* System & Profile Group */}
           <div className="space-y-1">
-            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
               System
             </p>
             <NavLink to="/settings" className={navItemClass}>
@@ -229,19 +235,19 @@ export const Sidebar = ({ isOpen, onClose }) => {
       </div>
 
       {/* User Footer Card & Logout */}
-      <div className="p-3 border-t border-gray-100 bg-gray-50/50">
-        <div className="p-2.5 rounded-xl bg-white border border-gray-200/80 shadow-2xs flex items-center justify-between gap-2">
+      <div className="p-3 border-t border-purple-500/15 bg-slate-950/60 backdrop-blur-md relative z-10">
+        <div className="p-2.5 rounded-xl bg-slate-900/90 border border-purple-500/20 shadow-lg shadow-black/40 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shadow-md shadow-purple-500/30 shrink-0">
               {(user?.name || 'U')[0]}
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-bold text-gray-900 truncate leading-tight">
+              <p className="text-xs font-bold text-slate-100 truncate leading-tight">
                 {user?.name || 'Staff User'}
               </p>
               <div className="flex items-center gap-1 mt-0.5">
-                <Shield className="w-3 h-3 text-indigo-500" />
-                <span className="text-[10px] font-medium text-gray-500 truncate">
+                <Shield className="w-3 h-3 text-purple-400" />
+                <span className="text-[10px] font-medium text-purple-300/80 truncate">
                   {user?.role || 'Staff'}
                 </span>
               </div>
@@ -252,7 +258,7 @@ export const Sidebar = ({ isOpen, onClose }) => {
             type="button"
             onClick={handleLogout}
             title="Logout"
-            className="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 transition-colors shrink-0"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors shrink-0"
             aria-label="Logout"
           >
             <LogOut className="w-4 h-4" />
