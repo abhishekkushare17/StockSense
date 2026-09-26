@@ -31,4 +31,8 @@ router.use('/categories', categoryRoutes);
 const warehouseRoutes = require('./warehouse.routes');
 router.use('/warehouses', warehouseRoutes);
 
+// Stock Routes
+const stockRoutes = require('./stock.routes');
+router.use('/stock', stockRoutes);
+
 module.exports = router;
