@@ -47,4 +47,8 @@ router.use('/deliveries', deliveryRoutes);
 const transferRoutes = require('./transfer.routes');
 router.use('/transfers', transferRoutes);
 
+// Stock Adjustment Routes
+const adjustmentRoutes = require('./adjustment.routes');
+router.use('/adjustments', adjustmentRoutes);
+
 module.exports = router;
