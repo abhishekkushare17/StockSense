@@ -54,6 +54,7 @@ router.use('/adjustments', adjustmentRoutes);
 // Stock Ledger Routes
 const ledgerRoutes = require('./ledger.routes');
 router.use('/ledger', ledgerRoutes);
+router.use('/moves', ledgerRoutes);
 
 // Dashboard Analytics Routes
 const dashboardRoutes = require('./dashboard.routes');
