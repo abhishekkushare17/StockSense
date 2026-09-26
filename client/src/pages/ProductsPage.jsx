@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Package,
   Search,
@@ -12,7 +12,9 @@ import {
   Warehouse,
   Layers,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  RotateCcw,
+  SlidersHorizontal
 } from 'lucide-react';
 import { Badge, Button, Table, Loading, EmptyState, ConfirmDialog } from '../components/common';
 import ProductModal from '../components/products/ProductModal';
@@ -23,7 +25,8 @@ import {
   updateProduct,
   deleteProduct
 } from '../services/productService';
-import { getCategories, getWarehouses } from '../services/catalogService';
+import { getCategories } from '../services/categoryService';
+import { getWarehouses } from '../services/warehouseService';
 
 export const ProductsPage = () => {
   const [products, setProducts] = useState([]);
@@ -48,24 +51,29 @@ export const ProductsPage = () => {
   const [serverError, setServerError] = useState('');
   const [isActionLoading, setIsActionLoading] = useState(false);
 
+  // Load Categories & Warehouses on mount
   useEffect(() => {
     fetchMetadata();
   }, []);
 
+  // Fetch product list when filters change
   useEffect(() => {
-    fetchProductList();
-  }, [categoryFilter, warehouseFilter, stockStateFilter]);
+    const timer = setTimeout(() => {
+      fetchProductList();
+    }, 250); // slight debounce for smooth filter switching
+    return () => clearTimeout(timer);
+  }, [search, categoryFilter, warehouseFilter, stockStateFilter]);
 
   const fetchMetadata = async () => {
     try {
       const [cats, whs] = await Promise.all([
-        getCategories(),
-        getWarehouses()
+        getCategories().catch(() => []),
+        getWarehouses().catch(() => [])
       ]);
       setCategories(cats);
       setWarehouses(whs);
     } catch (err) {
-      console.error('Failed to load filters metadata:', err);
+      console.error('Failed to load filter metadata:', err);
     }
   };
 
@@ -97,6 +105,13 @@ export const ProductsPage = () => {
     fetchProductList();
   };
 
+  const handleResetFilters = () => {
+    setSearch('');
+    setCategoryFilter('');
+    setWarehouseFilter('');
+    setStockStateFilter('');
+  };
+
   const handleCreateOrUpdate = async (formData) => {
     setIsActionLoading(true);
     try {
@@ -111,6 +126,8 @@ export const ProductsPage = () => {
       setEditingProduct(null);
       fetchProductList();
       setTimeout(() => setNotification(''), 4000);
+    } catch (err) {
+      setServerError(err.message || 'Operation failed. Please check SKU uniqueness.');
     } finally {
       setIsActionLoading(false);
     }
@@ -143,16 +160,16 @@ export const ProductsPage = () => {
             {row.description || 'No description provided'}
           </span>
         </div>
-      ),
+      )
     },
     {
       key: 'sku',
-      header: 'SKU / Code',
+      header: 'SKU',
       render: (val) => (
         <span className="font-mono font-bold text-xs text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200/50">
           {val}
         </span>
-      ),
+      )
     },
     {
       key: 'category',
@@ -161,7 +178,7 @@ export const ProductsPage = () => {
         <span className="text-xs font-semibold text-gray-700">
           {val?.name || 'Raw Materials'}
         </span>
-      ),
+      )
     },
     {
       key: 'unitOfMeasure',
@@ -170,7 +187,7 @@ export const ProductsPage = () => {
         <span className="text-xs uppercase font-medium text-gray-500">
           {val || 'pcs'}
         </span>
-      ),
+      )
     },
     {
       key: 'totalStock',
@@ -200,20 +217,22 @@ export const ProductsPage = () => {
             ) : null}
           </div>
         );
-      },
+      }
     },
     {
       key: 'warehouse',
       header: 'Warehouse',
       render: (val, row) => {
-        const whName = row.stocks?.[0]?.warehouse?.name || 'Central Hub';
+        const whName =
+          row.stocks?.[0]?.warehouse?.name ||
+          (warehouses.length > 0 ? warehouses[0].name : 'Central Hub');
         return <span className="text-xs text-gray-600">{whName}</span>;
-      },
+      }
     },
     {
       key: 'reorderLevel',
       header: 'Reorder Level',
-      render: (val) => <span className="text-xs text-gray-500">{val ?? 10}</span>,
+      render: (val) => <span className="text-xs font-mono text-gray-500">{val ?? 10}</span>
     },
     {
       key: 'status',
@@ -222,7 +241,7 @@ export const ProductsPage = () => {
         <Badge variant={val === 'active' ? 'success' : 'neutral'} dot size="sm">
           {val || 'active'}
         </Badge>
-      ),
+      )
     },
     {
       key: 'actions',
@@ -257,9 +276,13 @@ export const ProductsPage = () => {
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
-      ),
-    },
+      )
+    }
   ];
+
+  const hasActiveFilters = Boolean(
+    search || categoryFilter || warehouseFilter || stockStateFilter
+  );
 
   return (
     <div className="space-y-6">
@@ -277,8 +300,7 @@ export const ProductsPage = () => {
 
         <Button
           variant="primary"
-          size="md"
-          icon={Plus}
+          leftIcon={<Plus className="w-4 h-4" />}
           onClick={() => {
             setEditingProduct(null);
             setIsProductModalOpen(true);
@@ -288,16 +310,55 @@ export const ProductsPage = () => {
         </Button>
       </div>
 
+      {/* Quick Status Filter Pills */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <button
+          type="button"
+          onClick={() => setStockStateFilter('')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+            stockStateFilter === ''
+              ? 'bg-indigo-600 text-white shadow-xs'
+              : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+          }`}
+        >
+          All Products
+        </button>
+        <button
+          type="button"
+          onClick={() => setStockStateFilter('lowStock')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
+            stockStateFilter === 'lowStock'
+              ? 'bg-amber-500 text-white shadow-xs'
+              : 'bg-white text-amber-700 border border-amber-200 hover:bg-amber-50'
+          }`}
+        >
+          <AlertTriangle className="w-3.5 h-3.5" />
+          Low Stock Only
+        </button>
+        <button
+          type="button"
+          onClick={() => setStockStateFilter('outOfStock')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
+            stockStateFilter === 'outOfStock'
+              ? 'bg-rose-600 text-white shadow-xs'
+              : 'bg-white text-rose-700 border border-rose-200 hover:bg-rose-50'
+          }`}
+        >
+          <XCircle className="w-3.5 h-3.5" />
+          Out of Stock Only
+        </button>
+      </div>
+
       {/* Notifications and Alerts */}
       {notification && (
-        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 animate-fadeIn">
+        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 animate-in fade-in duration-200">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>{notification}</span>
         </div>
       )}
 
       {serverError && (
-        <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between gap-2 animate-fadeIn">
+        <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between gap-2 animate-in fade-in duration-200">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
             <span>{serverError}</span>
@@ -313,77 +374,64 @@ export const ProductsPage = () => {
       )}
 
       {/* Filter and Search Bar */}
-      <div className="p-4 bg-white rounded-2xl border border-gray-200 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-3">
-        <form onSubmit={handleSearchSubmit} className="flex-1 w-full flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search by Product Name or SKU..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500 font-medium"
-            />
+      <div className="p-4 bg-white rounded-2xl border border-gray-200 shadow-2xs space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          {/* Search Box */}
+          <div className="md:col-span-2">
+            <form onSubmit={handleSearchSubmit} className="relative">
+              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search by Product Name or SKU..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500 font-medium"
+              />
+            </form>
           </div>
-          <Button type="submit" variant="secondary" size="sm">
-            Search
-          </Button>
-        </form>
 
-        <div className="flex items-center gap-2 flex-wrap w-full md:w-auto">
           {/* Category Filter */}
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="text-xs py-2 px-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 font-medium"
-          >
-            <option value="">All Categories</option>
-            {categories.map((c) => (
-              <option key={c._id} value={c._id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          <div>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="w-full text-xs py-2 px-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 font-medium"
+            >
+              <option value="">All Categories</option>
+              {categories.map((c) => (
+                <option key={c._id} value={c._id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {/* Warehouse Filter */}
-          <select
-            value={warehouseFilter}
-            onChange={(e) => setWarehouseFilter(e.target.value)}
-            className="text-xs py-2 px-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 font-medium"
-          >
-            <option value="">All Warehouses</option>
-            {warehouses.map((w) => (
-              <option key={w._id} value={w._id}>
-                {w.name}
-              </option>
-            ))}
-          </select>
-
-          {/* Stock State Filter */}
-          <select
-            value={stockStateFilter}
-            onChange={(e) => setStockStateFilter(e.target.value)}
-            className="text-xs py-2 px-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 font-medium"
-          >
-            <option value="">All Stock Levels</option>
-            <option value="lowStock">Low Stock Only</option>
-            <option value="outOfStock">Out of Stock Only</option>
-          </select>
-
-          {(categoryFilter || warehouseFilter || stockStateFilter || search) && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setSearch('');
-                setCategoryFilter('');
-                setWarehouseFilter('');
-                setStockStateFilter('');
-              }}
+          <div className="flex items-center gap-2">
+            <select
+              value={warehouseFilter}
+              onChange={(e) => setWarehouseFilter(e.target.value)}
+              className="w-full text-xs py-2 px-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 font-medium"
             >
-              Reset
-            </Button>
-          )}
+              <option value="">All Warehouses</option>
+              {warehouses.map((w) => (
+                <option key={w._id} value={w._id}>
+                  {w.name} ({w.code})
+                </option>
+              ))}
+            </select>
+
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="p-2 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors shrink-0"
+                title="Reset Filters"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -393,18 +441,43 @@ export const ProductsPage = () => {
           <Loading text="Loading products..." size="lg" />
         </div>
       ) : products.length > 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-2xs">
-          <Table columns={columns} data={products} />
+        <div className="space-y-3">
+          <Table
+            columns={columns}
+            data={products}
+            keyExtractor={(row) => row._id}
+          />
+          <div className="text-right text-xs text-gray-500 px-2">
+            Showing <span className="font-semibold text-gray-900">{products.length}</span> products
+          </div>
         </div>
       ) : (
         <EmptyState
           title="No Products Found"
-          message="No items match your active filters. Try adjusting your search query or reset filters."
-          actionText="Add Product"
-          onAction={() => {
-            setEditingProduct(null);
-            setIsProductModalOpen(true);
-          }}
+          description={
+            hasActiveFilters
+              ? 'No products matched your active filters. Try searching for a different keyword or reset filters.'
+              : 'Start by creating your first product item in the inventory catalog.'
+          }
+          icon={Package}
+          action={
+            hasActiveFilters ? (
+              <Button variant="secondary" size="sm" onClick={handleResetFilters}>
+                Clear All Filters
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                leftIcon={<Plus className="w-4 h-4" />}
+                onClick={() => {
+                  setEditingProduct(null);
+                  setIsProductModalOpen(true);
+                }}
+              >
+                Add Product
+              </Button>
+            )
+          }
         />
       )}
 
@@ -432,12 +505,12 @@ export const ProductsPage = () => {
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         isOpen={Boolean(deletingProduct)}
-        onClose={() => setDeletingProduct(null)}
+        onCancel={() => setDeletingProduct(null)}
         onConfirm={handleDeleteConfirm}
         title="Delete Product"
-        message={`Are you sure you want to delete product "${deletingProduct?.name}" (${deletingProduct?.sku})? This will remove its inventory records.`}
+        message={`Are you sure you want to delete product "${deletingProduct?.name}" (${deletingProduct?.sku})? Products with active stock cannot be deleted until inventory is zeroed.`}
         confirmText="Delete Product"
-        variant="danger"
+        confirmVariant="danger"
         isLoading={isActionLoading}
       />
     </div>
