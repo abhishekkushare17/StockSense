@@ -43,4 +43,8 @@ router.use('/receipts', receiptRoutes);
 const deliveryRoutes = require('./delivery.routes');
 router.use('/deliveries', deliveryRoutes);
 
+// Internal Transfer Routes
+const transferRoutes = require('./transfer.routes');
+router.use('/transfers', transferRoutes);
+
 module.exports = router;

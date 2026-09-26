@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { TRANSFER_STATUS } = require('../utils/constants');
+const { ALL_OPERATION_STATUSES } = require('../utils/constants');
 
 const transferItemSchema = new mongoose.Schema(
   {
@@ -47,21 +47,25 @@ const internalTransferSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: Object.values(TRANSFER_STATUS),
-      default: TRANSFER_STATUS.DRAFT
+      enum: ALL_OPERATION_STATUSES,
+      default: 'Draft'
     },
     transferDate: {
       type: Date,
       default: Date.now
     },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
     initiatedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: [true, 'Initiating user reference is required']
+      ref: 'User'
     },
     notes: {
       type: String,
-      trim: true
+      trim: true,
+      default: ''
     }
   },
   {
@@ -78,8 +82,19 @@ internalTransferSchema.pre('validate', function (next) {
   ) {
     this.invalidate('destinationWarehouse', 'Source and destination warehouses cannot be the same');
   }
+
+  if (this.createdBy && !this.initiatedBy) this.initiatedBy = this.createdBy;
+  if (this.initiatedBy && !this.createdBy) this.createdBy = this.initiatedBy;
+
   next();
 });
+
+internalTransferSchema.virtual('products').get(function () {
+  return this.items;
+});
+
+internalTransferSchema.set('toJSON', { virtuals: true });
+internalTransferSchema.set('toObject', { virtuals: true });
 
 const InternalTransfer = mongoose.model('InternalTransfer', internalTransferSchema);
 
