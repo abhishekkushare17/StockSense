@@ -7,7 +7,8 @@ const {
   Product,
   Stock,
   StockLedger,
-  AuditLog
+  AuditLog,
+  Anomaly
 } = require('../models');
 
 const seedData = async (exitOnComplete = true) => {
@@ -398,6 +399,31 @@ const seedData = async (exitOnComplete = true) => {
 
       await AuditLog.insertMany(sampleAudits);
       console.log('  -> Seeded 5 initial audit log records for live demo');
+    }
+
+    // 6. Seed Sample Inventory Anomaly for Live Intelligence Demo
+    console.log('[Seed] Seeding Sample Inventory Anomalies...');
+    const existingAnomalyCount = await Anomaly.countDocuments();
+    if (existingAnomalyCount === 0) {
+      const steelRod = await Product.findOne({ sku: 'ROD-STL-001' });
+      const wh = await Warehouse.findOne({ code: 'WH-CENTRAL-01' });
+      if (steelRod && wh) {
+        await Anomaly.create({
+          product: steelRod._id,
+          warehouse: wh._id,
+          type: 'MOVEMENT_SPIKE',
+          severity: 'WARNING',
+          title: 'Unusual Movement Spike on Steel Rod 10mm',
+          description: "Today's movement of 145 units significantly exceeds the normal daily average of 10–20 units.",
+          normalBaseline: '10–20 units/day',
+          detectedValue: '145 units today',
+          reason: 'Unusually high stock movement detected.',
+          referenceModel: 'StockLedger',
+          referenceId: 'LEDGER-SPIKE-001',
+          status: 'OPEN'
+        });
+        console.log('  -> Seeded sample Anomaly: Movement Spike on Steel Rod');
+      }
     }
 
     console.log('==================================================');

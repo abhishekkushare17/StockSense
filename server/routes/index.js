@@ -68,4 +68,8 @@ router.use('/notifications', notificationRoutes);
 const auditLogRoutes = require('./auditLog.routes');
 router.use('/audit-logs', auditLogRoutes);
 
+// StockSense Inventory Intelligence Routes
+const intelligenceRoutes = require('./intelligence.routes');
+router.use('/intelligence', intelligenceRoutes);
+
 module.exports = router;

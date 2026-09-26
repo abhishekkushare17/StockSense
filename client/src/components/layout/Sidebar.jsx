@@ -22,7 +22,9 @@ import {
   FileSpreadsheet,
   ScrollText,
   QrCode,
-  ShieldAlert
+  ShieldAlert,
+  TrendingDown,
+  Radar
 } from 'lucide-react';
 import { ROLES } from '../../utils/constants';
 
@@ -169,6 +171,30 @@ export const Sidebar = ({ isOpen, onClose }) => {
                 </NavLink>
               </div>
             )}
+          </div>
+
+          {/* StockSense Intelligence Group */}
+          <div className="space-y-1">
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-indigo-500 mb-2 flex items-center justify-between">
+              <span>Intelligence</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+            </p>
+            <NavLink to="/forecast" className={navItemClass}>
+              <TrendingDown className="w-4 h-4 shrink-0 text-indigo-500" />
+              <span>Stock Forecast</span>
+            </NavLink>
+            <NavLink to="/risk-radar" className={navItemClass}>
+              <Radar className="w-4 h-4 shrink-0 text-rose-500" />
+              <span>Risk Radar</span>
+            </NavLink>
+            <NavLink to="/anomalies" className={navItemClass}>
+              <ShieldAlert className="w-4 h-4 shrink-0 text-amber-500" />
+              <span>Anomalies</span>
+            </NavLink>
+            <NavLink to="/simulator" className={navItemClass}>
+              <Layers className="w-4 h-4 shrink-0 text-emerald-500" />
+              <span>What-If Simulator</span>
+            </NavLink>
           </div>
 
           {/* Intelligence & Audit Group */}

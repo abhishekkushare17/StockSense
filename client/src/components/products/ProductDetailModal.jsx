@@ -17,11 +17,13 @@ import {
   Activity
 } from 'lucide-react';
 import api from '../../services/api';
+import { ExplainStockModal } from '../intelligence';
 
 export const ProductDetailModal = ({ isOpen, onClose, productId }) => {
   const [product, setProduct] = useState(null);
   const [movements, setMovements] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExplainOpen, setIsExplainOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -152,11 +154,20 @@ export const ProductDetailModal = ({ isOpen, onClose, productId }) => {
 
           {/* Quick Metrics */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-            <div className="p-3 bg-white border border-gray-200 rounded-xl shadow-2xs">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Total Stock</span>
-              <span className={`text-xl font-extrabold ${isOut ? 'text-rose-600' : isLow ? 'text-amber-600' : 'text-gray-900'}`}>
-                {totalStock} {product.unitOfMeasure}
-              </span>
+            <div className="p-3 bg-white border border-gray-200 rounded-xl shadow-2xs flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Total Stock</span>
+                <span className={`text-xl font-extrabold ${isOut ? 'text-rose-600' : isLow ? 'text-amber-600' : 'text-gray-900'}`}>
+                  {totalStock} {product.unitOfMeasure}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsExplainOpen(true)}
+                className="text-[10px] font-semibold text-indigo-600 hover:text-indigo-800 underline mt-1"
+              >
+                Explain Stock
+              </button>
             </div>
             <div className="p-3 bg-white border border-gray-200 rounded-xl shadow-2xs">
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Available</span>
@@ -321,6 +332,13 @@ export const ProductDetailModal = ({ isOpen, onClose, productId }) => {
         <div className="py-6 text-center text-xs text-gray-500">
           Product record could not be retrieved.
         </div>
+      )}
+      {product && (
+        <ExplainStockModal
+          isOpen={isExplainOpen}
+          productId={product._id}
+          onClose={() => setIsExplainOpen(false)}
+        />
       )}
     </Modal>
   );

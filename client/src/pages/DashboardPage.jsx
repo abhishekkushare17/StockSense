@@ -13,6 +13,15 @@ import {
   StockByWarehouseChart
 } from '../components/dashboard/Charts';
 import {
+  DailyActionCenter,
+  StockForecastWidget,
+  RiskRadarWidget,
+  AnomalyAlertsWidget,
+  WhatIfSimulatorModal,
+  FindMyStockModal,
+  ExplainStockModal
+} from '../components/intelligence';
+import {
   getDashboardSummary,
   getRecentMovements,
   getLowStockAlerts,
@@ -20,6 +29,7 @@ import {
   getStockByWarehouse,
   getSmartReorderRecommendations
 } from '../services/dashboardService';
+import intelligenceService from '../services/intelligenceService';
 import {
   Sparkles,
   RefreshCw,
@@ -32,7 +42,10 @@ import {
   PackagePlus,
   Truck,
   ArrowRightLeft,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Search,
+  Radar,
+  HelpCircle
 } from 'lucide-react';
 import { Button, Badge } from '../components/common';
 import { ROLES } from '../utils/constants';
@@ -41,12 +54,27 @@ import { useNavigate } from 'react-router-dom';
 export const DashboardPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Core KPIs & Operational State
   const [summary, setSummary] = useState({});
   const [activities, setActivities] = useState([]);
   const [lowStockItems, setLowStockItems] = useState([]);
   const [allStocks, setAllStocks] = useState([]);
   const [warehouseStockData, setWarehouseStockData] = useState([]);
   const [reorderRecs, setReorderRecs] = useState([]);
+
+  // Intelligence State
+  const [dailyActions, setDailyActions] = useState(null);
+  const [forecasts, setForecasts] = useState([]);
+  const [riskRadar, setRiskRadar] = useState(null);
+  const [anomalies, setAnomalies] = useState([]);
+
+  // Intelligence Modals State
+  const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
+  const [simulatorProductId, setSimulatorProductId] = useState(null);
+  const [isFindStockOpen, setIsFindStockOpen] = useState(false);
+  const [explainProductId, setExplainProductId] = useState(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -58,7 +86,6 @@ export const DashboardPage = () => {
     category: ''
   });
 
-  // Dynamic greeting based on time of day
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good Morning';
@@ -68,7 +95,6 @@ export const DashboardPage = () => {
 
   const userRole = user?.role || ROLES.INVENTORY_MANAGER;
   const isStaff = userRole === ROLES.WAREHOUSE_STAFF;
-  const isAdminOrManager = userRole === ROLES.ADMIN || userRole === ROLES.INVENTORY_MANAGER;
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -103,15 +129,29 @@ export const DashboardPage = () => {
       if (filters.warehouse) stockParams.warehouse = filters.warehouse;
       if (filters.category) stockParams.category = filters.category;
 
-      const [summaryData, movementsData, alertsData, stockLevelsData, whData, recsData] =
-        await Promise.all([
-          getDashboardSummary(summaryParams),
-          getRecentMovements(15, ledgerParams),
-          getLowStockAlerts(stockParams),
-          getAllStockLevels(stockParams),
-          getStockByWarehouse().catch(() => []),
-          getSmartReorderRecommendations(stockParams).catch(() => [])
-        ]);
+      const [
+        summaryData,
+        movementsData,
+        alertsData,
+        stockLevelsData,
+        whData,
+        recsData,
+        actionsData,
+        forecastData,
+        radarData,
+        anomaliesData
+      ] = await Promise.all([
+        getDashboardSummary(summaryParams),
+        getRecentMovements(15, ledgerParams),
+        getLowStockAlerts(stockParams),
+        getAllStockLevels(stockParams),
+        getStockByWarehouse().catch(() => []),
+        getSmartReorderRecommendations(stockParams).catch(() => []),
+        intelligenceService.getDailyActions().catch(() => null),
+        intelligenceService.getStockForecast().catch(() => []),
+        intelligenceService.getRiskRadar().catch(() => null),
+        intelligenceService.getAnomalies().catch(() => [])
+      ]);
 
       setSummary(summaryData);
       setActivities(movementsData);
@@ -119,6 +159,12 @@ export const DashboardPage = () => {
       setAllStocks(stockLevelsData.stocks || []);
       setWarehouseStockData(Array.isArray(whData) ? whData : []);
       setReorderRecs(Array.isArray(recsData) ? recsData : []);
+
+      // Set Intelligence Data
+      setDailyActions(actionsData);
+      setForecasts(forecastData || []);
+      setRiskRadar(radarData);
+      setAnomalies(anomaliesData || []);
     } catch (err) {
       console.error('Failed to load dashboard data from backend:', err);
       setError(err.message || 'Failed to load real-time inventory metrics.');
@@ -127,7 +173,7 @@ export const DashboardPage = () => {
     }
   };
 
-  // 1. Transform Category Stock Chart Data
+  // Transform Category Stock Chart Data
   const categoryChartData = useMemo(() => {
     const map = new Map();
     allStocks.forEach((item) => {
@@ -135,12 +181,11 @@ export const DashboardPage = () => {
       const qty = item.quantity || 0;
       map.set(catName, (map.get(catName) || 0) + qty);
     });
-
     const result = Array.from(map.entries()).map(([name, value]) => ({ name, value }));
     return result.length > 0 ? result : [{ name: 'Raw Materials', value: 15 }];
   }, [allStocks]);
 
-  // 2. Transform Stock Movement Trends Data
+  // Transform Stock Movement Trends Data
   const movementChartData = useMemo(() => {
     if (!activities || activities.length === 0) {
       return [
@@ -148,7 +193,6 @@ export const DashboardPage = () => {
         { time: '10:00', inbound: 0, outbound: 0 }
       ];
     }
-
     return activities
       .slice()
       .reverse()
@@ -165,7 +209,7 @@ export const DashboardPage = () => {
       });
   }, [activities]);
 
-  // 3. Transform Stock by Warehouse Chart Data
+  // Transform Stock by Warehouse Chart Data
   const warehouseChartData = useMemo(() => {
     if (warehouseStockData && warehouseStockData.length > 0) {
       return warehouseStockData;
@@ -179,7 +223,7 @@ export const DashboardPage = () => {
     return res.length > 0 ? res : [{ name: 'Main Facility', value: 250 }];
   }, [warehouseStockData, allStocks]);
 
-  // 4. Transform Incoming vs Outgoing Operations Data
+  // Transform Incoming vs Outgoing Operations Data
   const incomingOutgoingData = useMemo(() => {
     return [
       {
@@ -196,53 +240,51 @@ export const DashboardPage = () => {
   }, [summary, activities]);
 
   return (
-    <div className="space-y-7">
-      {/* Command Center Greeting & System State Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-indigo-700 via-indigo-600 to-indigo-800 rounded-3xl p-6 sm:p-8 text-white shadow-md relative overflow-hidden">
+    <div className="space-y-8">
+      {/* Command Center Greeting & Hero Action Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden border border-white/10">
         <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-indigo-100 text-xs font-semibold mb-3 backdrop-blur-xs border border-white/10">
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            Inventory Command Center &bull; {userRole}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-semibold mb-3 backdrop-blur-md border border-indigo-400/30">
+            <Sparkles className="w-3.5 h-3.5 text-indigo-300" />
+            StockSense Inventory Intelligence Platform &bull; {userRole}
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            {greeting}, {user?.name || 'Manager'}
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+            {greeting}, {user?.name || 'Inventory Lead'} 👋
           </h1>
-          <p className="mt-2 text-indigo-100 text-xs sm:text-sm leading-relaxed">
-            Here's your live inventory overview across warehouse facilities. All stock allocations are backed by immutable ledger audit records.
+          <p className="mt-2 text-slate-300 text-xs sm:text-sm leading-relaxed">
+            Welcome to your intelligent decision center. StockSense doesn't just show inventory quantities—it forecasts stockouts, highlights risks, detects anomalies, and guides today's operational actions.
           </p>
 
-          {/* Quick Staff Actions Shortcut if Warehouse Staff */}
-          {isStaff && (
-            <div className="mt-4 flex items-center gap-2 flex-wrap">
-              <Button
-                variant="secondary"
-                size="sm"
-                icon={QrCode}
-                onClick={() => navigate('/scanner')}
-                className="bg-white text-indigo-700 hover:bg-gray-100 font-bold text-xs"
-              >
-                Scan Barcode
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                icon={PackagePlus}
-                onClick={() => navigate('/receipts')}
-                className="bg-white/10 hover:bg-white/20 text-white border-white/20 text-xs"
-              >
-                Receive Goods
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                icon={Truck}
-                onClick={() => navigate('/deliveries')}
-                className="bg-white/10 hover:bg-white/20 text-white border-white/20 text-xs"
-              >
-                Dispatch Order
-              </Button>
-            </div>
-          )}
+          {/* Quick Intelligence Tool Launchers */}
+          <div className="mt-4 flex items-center gap-2.5 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setIsFindStockOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all border border-white/15"
+            >
+              <Search className="w-3.5 h-3.5 text-indigo-300" />
+              Where is My Stock?
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSimulatorProductId(null);
+                setIsSimulatorOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-950 transition-all border border-indigo-400/30"
+            >
+              <Layers className="w-3.5 h-3.5 text-indigo-200" />
+              Run What-If Simulation
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/scanner')}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 text-xs font-bold transition-all border border-white/10"
+            >
+              <QrCode className="w-3.5 h-3.5 text-indigo-300" />
+              Scan Barcode
+            </button>
+          </div>
         </div>
 
         <div className="relative z-10 flex items-center gap-3">
@@ -252,105 +294,161 @@ export const DashboardPage = () => {
             onClick={fetchDashboardData}
             isLoading={isLoading}
             icon={RefreshCw}
-            className="bg-white/10 hover:bg-white/20 text-white border-white/20 text-xs"
+            className="bg-white/10 hover:bg-white/20 text-white border-white/20"
           >
-            Refresh Live Data
+            Sync Intelligence
           </Button>
         </div>
+
+        {/* Ambient background decoration */}
+        <div className="absolute -right-10 -bottom-10 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
       </div>
 
-      {/* Global Error Banner */}
       {error && (
-        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-            <span>{error}</span>
-          </div>
-          <button
-            type="button"
-            onClick={fetchDashboardData}
-            className="underline font-bold hover:text-rose-900"
-          >
-            Try Again
-          </button>
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-rose-500 shrink-0" />
+          <span>{error}</span>
         </div>
       )}
 
-      {/* Top KPI Cards Grid (Total Stock, Low Stock, Out of Stock, Pending Receipts, Pending Deliveries, Scheduled Transfers) */}
-      <section aria-label="Key Performance Indicators">
-        <KPICards summary={summary} isLoading={isLoading} />
+      {/* ========================================================================= */}
+      {/* 🧠 SECTION: STOCKSENSE INTELLIGENCE PLATFORM (PRIORITIZED AT TOP)        */}
+      {/* ========================================================================= */}
+      <section className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-6 bg-indigo-600 rounded-full" />
+            <h2 className="text-lg font-black tracking-tight text-gray-900 uppercase">
+              StockSense Intelligence
+            </h2>
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
+              Live Heuristics & Forecasting
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3 text-xs text-gray-500">
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" /> Live Engine Active
+            </span>
+          </div>
+        </div>
+
+        {/* 1. Daily Action Center — "What Should I Do Today?" */}
+        <DailyActionCenter
+          data={dailyActions}
+          onRefresh={fetchDashboardData}
+          onOpenSimulator={() => {
+            setSimulatorProductId(null);
+            setIsSimulatorOpen(true);
+          }}
+          onOpenFindStock={() => setIsFindStockOpen(true)}
+        />
+
+        {/* 2. Stock Forecast & Risk Radar (2-Column Intelligence Grid) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-7">
+            <StockForecastWidget
+              forecasts={forecasts}
+              onExplainStock={(prodId) => setExplainProductId(prodId)}
+              onOpenSimulator={(prodId) => {
+                setSimulatorProductId(prodId);
+                setIsSimulatorOpen(true);
+              }}
+            />
+          </div>
+
+          <div className="lg:col-span-5">
+            <RiskRadarWidget radarData={riskRadar} />
+          </div>
+        </div>
+
+        {/* 3. Inventory Anomaly Detection Alerts */}
+        <AnomalyAlertsWidget
+          anomalies={anomalies}
+          onRefresh={fetchDashboardData}
+        />
       </section>
 
-      {/* Dashboard Filter Toolbar */}
-      <section aria-label="Dashboard Filters">
+      {/* ========================================================================= */}
+      {/* 📊 SECTION: CORE INVENTORY METRICS & REORDER HEALTH                       */}
+      {/* ========================================================================= */}
+      <section className="space-y-6 pt-4 border-t border-gray-200">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-6 bg-slate-800 rounded-full" />
+            <h2 className="text-lg font-black tracking-tight text-gray-900 uppercase">
+              Inventory Foundation & KPIs
+            </h2>
+          </div>
+        </div>
+
+        {/* 7 Standard KPIs */}
+        <KPICards summary={summary} isLoading={isLoading} />
+
+        {/* Smart Reorder & Circular Health Gauge */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-7">
+            <SmartReorderWidget
+              recommendations={reorderRecs}
+              onRefresh={fetchDashboardData}
+            />
+          </div>
+
+          <div className="lg:col-span-5">
+            <InventoryHealthWidget healthData={summary.inventoryHealth} />
+          </div>
+        </div>
+
+        {/* Real-time Filter Bar */}
         <DashboardFilters
           filters={filters}
           onFilterChange={handleFilterChange}
           onReset={handleResetFilters}
         />
-      </section>
 
-      {/* Middle Section: Stock Movement Chart, Inventory Health, Warehouse Overview */}
-      <section aria-label="Command Center Middle Core" className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-indigo-600" />
-            Inventory Flow Dynamics & System Health
-          </h2>
-          <span className="text-xs text-gray-400">Telemetry feed</span>
+        {/* Visual Charts Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <StockByCategoryChart data={categoryChartData} />
+          <StockMovementChart data={movementChartData} />
+          <IncomingVsOutgoingChart data={incomingOutgoingData} />
+          <StockByWarehouseChart data={warehouseChartData} />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          {/* Stock Movement Chart */}
+        {/* Live Activity & Low Stock Alerts */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <StockMovementChart data={movementChartData} isLoading={isLoading} />
-          </div>
-
-          {/* Inventory Health Ring Widget */}
-          <div className="lg:col-span-1">
-            <InventoryHealthWidget
-              summary={summary}
-              healthScore={summary.healthPercentage}
-              isLoading={isLoading}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Warehouse Overview & Category Breakdown */}
-      <section aria-label="Warehouse & Category Breakdown" className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-indigo-600" />
-            Warehouse Distribution & Fulfillment Velocity
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <StockByWarehouseChart data={warehouseChartData} isLoading={isLoading} />
-          <StockByCategoryChart data={categoryChartData} isLoading={isLoading} />
-          <IncomingVsOutgoingChart data={incomingOutgoingData} isLoading={isLoading} />
-        </div>
-      </section>
-
-      {/* Bottom Section: Low Stock Alerts, Recent Activity Feed, Smart Reorder Recommendations */}
-      <div className="space-y-6">
-        {/* Smart Reorder Recommendations Widget (Transparent Rule-Based Algorithm) */}
-        <section aria-label="Smart Reorder Recommendations">
-          <SmartReorderWidget initialData={reorderRecs} />
-        </section>
-
-        {/* Operational Alerts & Activity Feed */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <section aria-label="Low Stock Alerts">
-            <LowStockAlerts items={lowStockItems} isLoading={isLoading} />
-          </section>
-
-          <section aria-label="Live Activity Feed">
             <RecentActivityTable activities={activities} isLoading={isLoading} />
-          </section>
+          </div>
+
+          <div className="lg:col-span-1">
+            <LowStockAlerts items={lowStockItems} isLoading={isLoading} />
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 🛠️ MODAL TOOLS: SIMULATOR, LOCATION FINDER, EXPLAIN STOCK                 */}
+      {/* ========================================================================= */}
+      <WhatIfSimulatorModal
+        isOpen={isSimulatorOpen}
+        initialProductId={simulatorProductId}
+        onClose={() => {
+          setIsSimulatorOpen(false);
+          setSimulatorProductId(null);
+        }}
+        onApplied={() => fetchDashboardData()}
+      />
+
+      <FindMyStockModal
+        isOpen={isFindStockOpen}
+        onClose={() => setIsFindStockOpen(false)}
+      />
+
+      <ExplainStockModal
+        isOpen={!!explainProductId}
+        productId={explainProductId}
+        onClose={() => setExplainProductId(null)}
+      />
     </div>
   );
 };

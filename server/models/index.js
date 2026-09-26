@@ -10,6 +10,7 @@ const StockAdjustment = require('./StockAdjustment');
 const StockLedger = require('./StockLedger');
 const Notification = require('./Notification');
 const AuditLog = require('./AuditLog');
+const Anomaly = require('./Anomaly');
 
 module.exports = {
   User,
@@ -23,5 +24,6 @@ module.exports = {
   StockAdjustment,
   StockLedger,
   Notification,
-  AuditLog
+  AuditLog,
+  Anomaly
 };
