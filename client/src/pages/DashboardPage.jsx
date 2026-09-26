@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import KPICards from '../components/dashboard/KPICards';
+import DashboardFilters from '../components/dashboard/DashboardFilters';
 import RecentActivityTable from '../components/dashboard/RecentActivityTable';
 import LowStockAlerts from '../components/dashboard/LowStockAlerts';
 import {
@@ -27,20 +28,53 @@ export const DashboardPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Active filter state
+  const [filters, setFilters] = useState({
+    docType: '',
+    status: '',
+    warehouse: '',
+    category: ''
+  });
+
+  const handleFilterChange = (key, value) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleResetFilters = () => {
+    setFilters({
+      docType: '',
+      status: '',
+      warehouse: '',
+      category: ''
+    });
+  };
+
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [filters]);
 
   const fetchDashboardData = async () => {
     try {
       setIsLoading(true);
       setError(null);
 
+      // Construct API query parameters based on active filters
+      const summaryParams = {};
+      if (filters.warehouse) summaryParams.warehouse = filters.warehouse;
+
+      const ledgerParams = {};
+      if (filters.warehouse) ledgerParams.warehouse = filters.warehouse;
+      if (filters.docType) ledgerParams.operationType = filters.docType;
+
+      const stockParams = {};
+      if (filters.warehouse) stockParams.warehouse = filters.warehouse;
+      if (filters.category) stockParams.category = filters.category;
+
       const [summaryData, movementsData, alertsData, stockLevelsData] = await Promise.all([
-        getDashboardSummary(),
-        getRecentMovements(15),
-        getLowStockAlerts(),
-        getAllStockLevels()
+        getDashboardSummary(summaryParams),
+        getRecentMovements(15, ledgerParams),
+        getLowStockAlerts(stockParams),
+        getAllStockLevels(stockParams)
       ]);
 
       setSummary(summaryData);
@@ -55,7 +89,7 @@ export const DashboardPage = () => {
     }
   };
 
-  // 1. Transform Category Stock Chart Data (Real data aggregation)
+  // 1. Transform Category Stock Chart Data
   const categoryChartData = useMemo(() => {
     const map = new Map();
     allStocks.forEach((item) => {
@@ -68,7 +102,7 @@ export const DashboardPage = () => {
     return result.length > 0 ? result : [{ name: 'Raw Materials', value: 15 }];
   }, [allStocks]);
 
-  // 2. Transform Stock Movement Trends Data (Real ledger movements)
+  // 2. Transform Stock Movement Trends Data
   const movementChartData = useMemo(() => {
     if (!activities || activities.length === 0) {
       return [
@@ -77,7 +111,6 @@ export const DashboardPage = () => {
       ];
     }
 
-    // Group activities by hour or sequential record
     return activities
       .slice()
       .reverse()
@@ -113,7 +146,7 @@ export const DashboardPage = () => {
         outgoing: summary.pendingDeliveries || 0
       },
       {
-        category: 'Active Movements',
+        category: 'Movements',
         incoming: activities.filter((a) => (a.quantityChange || 0) > 0).length,
         outgoing: activities.filter((a) => (a.quantityChange || 0) < 0).length
       }
@@ -171,6 +204,15 @@ export const DashboardPage = () => {
       {/* 6 KPI Cards Grid */}
       <section aria-label="Key Performance Indicators">
         <KPICards summary={summary} isLoading={isLoading} />
+      </section>
+
+      {/* Filter Toolbar (Document Type, Status, Warehouse, Category) */}
+      <section aria-label="Dashboard Filters">
+        <DashboardFilters
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onReset={handleResetFilters}
+        />
       </section>
 
       {/* Visual Analytics & Inventory Charts */}
