@@ -92,6 +92,33 @@ export const LoginPage = () => {
             Sign In
           </Button>
         </div>
+
+        {/* Demo Credentials Quick-Fill */}
+        <div className="pt-3 border-t border-gray-100">
+          <p className="text-xs text-center text-gray-500 mb-2 font-medium">Quick Demo Accounts:</p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('manager@stocksense.com');
+                setPassword('Password123!');
+              }}
+              className="text-xs py-1.5 px-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium rounded-lg transition-colors border border-indigo-200/60"
+            >
+              Manager Account
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('staff@stocksense.com');
+                setPassword('Password123!');
+              }}
+              className="text-xs py-1.5 px-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors border border-gray-200"
+            >
+              Staff Account
+            </button>
+          </div>
+        </div>
       </form>
 
       <div className="mt-6 border-t border-gray-100 pt-4 text-center">
