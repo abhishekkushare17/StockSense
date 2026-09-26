@@ -112,6 +112,10 @@ export const Sidebar = ({ isOpen, onClose }) => {
               <Layers className="w-4 h-4 shrink-0" />
               <span>Categories</span>
             </NavLink>
+            <NavLink to="/stock" className={navItemClass}>
+              <Boxes className="w-4 h-4 shrink-0" />
+              <span>Stock Levels</span>
+            </NavLink>
             <NavLink to="/warehouse" className={navItemClass}>
               <Warehouse className="w-4 h-4 shrink-0" />
               <span>Warehouse</span>

@@ -11,6 +11,7 @@ import TransfersPage from '../pages/TransfersPage';
 import AdjustmentsPage from '../pages/AdjustmentsPage';
 import MoveHistoryPage from '../pages/MoveHistoryPage';
 import WarehousePage from '../pages/WarehousePage';
+import StockPage from '../pages/StockPage';
 import ProfilePage from '../pages/ProfilePage';
 import SettingsPage from '../pages/SettingsPage';
 import MainLayout from '../layouts/MainLayout';
@@ -49,6 +50,7 @@ export const AppRoutes = () => {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
+          <Route path="/stock" element={<StockPage />} />
           <Route path="/receipts" element={<ReceiptsPage />} />
           <Route path="/deliveries" element={<DeliveriesPage />} />
           <Route path="/transfers" element={<TransfersPage />} />
