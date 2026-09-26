@@ -2,6 +2,8 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '../pages/LoginPage';
 import SignupPage from '../pages/SignupPage';
+import ForgotPasswordPage from '../pages/ForgotPasswordPage';
+import ResetPasswordPage from '../pages/ResetPasswordPage';
 import DashboardPage from '../pages/DashboardPage';
 import ProductsPage from '../pages/ProductsPage';
 import CategoriesPage from '../pages/CategoriesPage';
@@ -12,6 +14,8 @@ import AdjustmentsPage from '../pages/AdjustmentsPage';
 import MoveHistoryPage from '../pages/MoveHistoryPage';
 import WarehousePage from '../pages/WarehousePage';
 import StockPage from '../pages/StockPage';
+import AnalyticsPage from '../pages/AnalyticsPage';
+import ReportsPage from '../pages/ReportsPage';
 import ProfilePage from '../pages/ProfilePage';
 import SettingsPage from '../pages/SettingsPage';
 import MainLayout from '../layouts/MainLayout';
@@ -42,6 +46,8 @@ export const AppRoutes = () => {
       {/* Public Auth Routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       {/* Protected Routes inside MainLayout */}
       <Route element={<ProtectedRoute />}>
@@ -56,6 +62,9 @@ export const AppRoutes = () => {
           <Route path="/transfers" element={<TransfersPage />} />
           <Route path="/adjustments" element={<AdjustmentsPage />} />
           <Route path="/move-history" element={<MoveHistoryPage />} />
+          <Route path="/ledger" element={<MoveHistoryPage />} />
+          <Route path="/analytics" element={<AnalyticsPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
           <Route path="/warehouse" element={<WarehousePage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/settings" element={<SettingsPage />} />

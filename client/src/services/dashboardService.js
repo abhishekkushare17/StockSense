@@ -41,9 +41,28 @@ export const getAllStockLevels = async (params = {}) => {
   return response.data?.data || { stocks: [], summary: {} };
 };
 
+/**
+ * Global search across Products, SKU, Receipts, Deliveries, Transfers
+ */
+export const searchGlobal = async (query) => {
+  if (!query || query.trim().length === 0) return { products: [], receipts: [], deliveries: [], transfers: [] };
+  const response = await api.get('/dashboard/search', { params: { q: query } });
+  return response.data?.data || { products: [], receipts: [], deliveries: [], transfers: [] };
+};
+
+/**
+ * Fetch stock distribution aggregated by warehouse
+ */
+export const getStockByWarehouse = async () => {
+  const response = await api.get('/dashboard/stock-by-warehouse');
+  return response.data?.data || [];
+};
+
 export default {
   getDashboardSummary,
   getRecentMovements,
   getLowStockAlerts,
-  getAllStockLevels
+  getAllStockLevels,
+  searchGlobal,
+  getStockByWarehouse
 };

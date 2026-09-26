@@ -60,4 +60,8 @@ router.use('/moves', ledgerRoutes);
 const dashboardRoutes = require('./dashboard.routes');
 router.use('/dashboard', dashboardRoutes);
 
+// Notification Alert Routes
+const notificationRoutes = require('./notification.routes');
+router.use('/notifications', notificationRoutes);
+
 module.exports = router;

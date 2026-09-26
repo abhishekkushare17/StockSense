@@ -1,12 +1,12 @@
 import React from 'react';
 import {
   Package,
+  Layers,
   AlertTriangle,
   XCircle,
   ClipboardList,
   Truck,
   ArrowRightLeft,
-  TrendingUp,
   ArrowUpRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -15,7 +15,7 @@ export const KPICards = ({ summary = {}, isLoading = false }) => {
   const cards = [
     {
       id: 'totalProducts',
-      title: 'Total Products in Stock',
+      title: 'Total Products',
       value: summary.totalProducts ?? 0,
       icon: Package,
       color: 'indigo',
@@ -23,11 +23,23 @@ export const KPICards = ({ summary = {}, isLoading = false }) => {
       textColor: 'text-indigo-600',
       borderColor: 'hover:border-indigo-300',
       link: '/products',
-      subtitle: 'Active SKU records'
+      subtitle: 'SKU Catalog'
+    },
+    {
+      id: 'totalStock',
+      title: 'Total Stock Units',
+      value: (summary.totalStock ?? 0).toLocaleString(),
+      icon: Layers,
+      color: 'sky',
+      bgLight: 'bg-sky-50/70',
+      textColor: 'text-sky-600',
+      borderColor: 'hover:border-sky-300',
+      link: '/stock',
+      subtitle: 'Physical inventory'
     },
     {
       id: 'lowStockItems',
-      title: 'Low Stock Items',
+      title: 'Low Stock',
       value: summary.lowStockItems ?? 0,
       icon: AlertTriangle,
       color: 'amber',
@@ -37,11 +49,11 @@ export const KPICards = ({ summary = {}, isLoading = false }) => {
       badge: summary.lowStockItems > 0 ? 'Warning' : 'Healthy',
       badgeColor: summary.lowStockItems > 0 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800',
       link: '/products?lowStock=true',
-      subtitle: 'At or below reorder level'
+      subtitle: 'At or below threshold'
     },
     {
       id: 'outOfStockItems',
-      title: 'Out of Stock Items',
+      title: 'Out of Stock',
       value: summary.outOfStockItems ?? 0,
       icon: XCircle,
       color: 'rose',
@@ -51,7 +63,7 @@ export const KPICards = ({ summary = {}, isLoading = false }) => {
       badge: summary.outOfStockItems > 0 ? 'Critical' : 'Zero',
       badgeColor: summary.outOfStockItems > 0 ? 'bg-rose-100 text-rose-800' : 'bg-gray-100 text-gray-700',
       link: '/products?outOfStock=true',
-      subtitle: 'Zero available units'
+      subtitle: 'Depleted SKU levels'
     },
     {
       id: 'pendingReceipts',
@@ -63,7 +75,7 @@ export const KPICards = ({ summary = {}, isLoading = false }) => {
       textColor: 'text-emerald-600',
       borderColor: 'hover:border-emerald-300',
       link: '/receipts',
-      subtitle: 'Inbound goods receiving'
+      subtitle: 'Inbound orders'
     },
     {
       id: 'pendingDeliveries',
@@ -75,11 +87,11 @@ export const KPICards = ({ summary = {}, isLoading = false }) => {
       textColor: 'text-purple-600',
       borderColor: 'hover:border-purple-300',
       link: '/deliveries',
-      subtitle: 'Outbound customer orders'
+      subtitle: 'Outbound shipments'
     },
     {
       id: 'scheduledTransfers',
-      title: 'Internal Transfers',
+      title: 'Transfers',
       value: summary.scheduledTransfers ?? 0,
       icon: ArrowRightLeft,
       color: 'blue',
@@ -87,27 +99,27 @@ export const KPICards = ({ summary = {}, isLoading = false }) => {
       textColor: 'text-blue-600',
       borderColor: 'hover:border-blue-300',
       link: '/transfers',
-      subtitle: 'Inter-hub stock movements'
+      subtitle: 'Inter-hub transit'
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 sm:gap-4">
       {cards.map((card) => {
         const Icon = card.icon;
         return (
           <Link
             key={card.id}
             to={card.link}
-            className={`group bg-white p-5 rounded-2xl border border-gray-200 shadow-2xs ${card.borderColor} transition-all duration-200 hover:shadow-md flex flex-col justify-between`}
+            className={`group bg-white p-4 sm:p-5 rounded-2xl border border-gray-200/90 shadow-2xs ${card.borderColor} transition-all duration-200 hover:shadow-md flex flex-col justify-between`}
           >
             <div>
               <div className="flex items-center justify-between gap-2 mb-3">
-                <div className={`p-2.5 rounded-xl ${card.bgLight} ${card.textColor}`}>
-                  <Icon className="w-5 h-5" />
+                <div className={`p-2 rounded-xl ${card.bgLight} ${card.textColor}`}>
+                  <Icon className="w-4 h-4" />
                 </div>
                 {card.badge && (
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${card.badgeColor}`}>
+                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${card.badgeColor}`}>
                     {card.badge}
                   </span>
                 )}
@@ -118,15 +130,15 @@ export const KPICards = ({ summary = {}, isLoading = false }) => {
               </span>
 
               {isLoading ? (
-                <div className="h-8 w-16 bg-gray-100 animate-pulse rounded-lg my-1.5" />
+                <div className="h-7 w-14 bg-gray-100 animate-pulse rounded-lg my-1.5" />
               ) : (
-                <div className="text-2xl font-extrabold text-gray-900 mt-1 tracking-tight">
+                <div className="text-xl sm:text-2xl font-extrabold text-gray-900 mt-1 tracking-tight">
                   {card.value}
                 </div>
               )}
             </div>
 
-            <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-400 group-hover:text-indigo-600 transition-colors">
+            <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-400 group-hover:text-indigo-600 transition-colors">
               <span className="truncate">{card.subtitle}</span>
               <ArrowUpRight className="w-3.5 h-3.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>

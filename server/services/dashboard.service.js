@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
-const { Product, Stock, Receipt, Delivery, InternalTransfer } = require('../models');
+const { Product, Stock, Receipt, Delivery, InternalTransfer, Warehouse, Category } = require('../models');
 
 /**
- * Dashboard Analytics and KPI Summary Service
+ * Dashboard Analytics, KPI Summary & Global Search Service
  */
 
 /**
@@ -56,10 +56,12 @@ const getDashboardSummary = async (queryParams = {}) => {
     ])
   ]);
 
-  // 2. Map stocks by product ID
+  // 2. Map stocks by product ID & calculate total stock units
   const stockMap = new Map();
+  let totalStock = 0;
   for (const s of stockAggregation) {
     stockMap.set(s._id.toString(), s.totalQuantity);
+    totalStock += s.totalQuantity || 0;
   }
 
   // 3. Compute low stock and out of stock counts
@@ -77,16 +79,115 @@ const getDashboardSummary = async (queryParams = {}) => {
     }
   }
 
+  const healthyProducts = Math.max(0, totalProducts - lowStockItems - outOfStockItems);
+  const healthPercentage = totalProducts > 0
+    ? Math.round((healthyProducts / totalProducts) * 100)
+    : 100;
+
   return {
     totalProducts,
+    totalStock,
     lowStockItems,
     outOfStockItems,
+    healthyProducts,
+    healthPercentage,
     pendingReceipts,
     pendingDeliveries,
     scheduledTransfers
   };
 };
 
+/**
+ * Global Search across Products, SKU, Receipts, Deliveries, and Transfers
+ */
+const globalSearch = async (searchTerm) => {
+  if (!searchTerm || !searchTerm.trim()) {
+    return { products: [], receipts: [], deliveries: [], transfers: [] };
+  }
+
+  const term = searchTerm.trim();
+  const regex = new RegExp(term, 'i');
+
+  const [products, receipts, deliveries, transfers] = await Promise.all([
+    Product.find({
+      $or: [{ name: regex }, { sku: regex }, { description: regex }]
+    })
+      .select('name sku unitOfMeasure reorderLevel')
+      .limit(6)
+      .lean(),
+
+    Receipt.find({
+      $or: [{ receiptNumber: regex }, { supplier: regex }]
+    })
+      .populate('warehouse', 'name code')
+      .select('receiptNumber supplier status createdAt')
+      .limit(5)
+      .lean(),
+
+    Delivery.find({
+      $or: [{ deliveryNumber: regex }, { customer: regex }, { customerName: regex }]
+    })
+      .populate('warehouse', 'name code')
+      .select('deliveryNumber customer status deliveryDate')
+      .limit(5)
+      .lean(),
+
+    InternalTransfer.find({
+      transferNumber: regex
+    })
+      .populate('sourceWarehouse', 'name')
+      .populate('destinationWarehouse', 'name')
+      .select('transferNumber status createdAt')
+      .limit(5)
+      .lean()
+  ]);
+
+  return {
+    products,
+    receipts,
+    deliveries,
+    transfers
+  };
+};
+
+/**
+ * Stock by Warehouse aggregation for 4th chart
+ */
+const getStockByWarehouse = async () => {
+  const stockByWh = await Stock.aggregate([
+    {
+      $group: {
+        _id: '$warehouse',
+        totalStock: { $sum: '$quantity' },
+        itemCount: { $sum: 1 }
+      }
+    },
+    {
+      $lookup: {
+        from: 'warehouses',
+        localField: '_id',
+        foreignField: '_id',
+        as: 'warehouseDetails'
+      }
+    },
+    { $unwind: '$warehouseDetails' },
+    {
+      $project: {
+        warehouseId: '$_id',
+        name: '$warehouseDetails.name',
+        code: '$warehouseDetails.code',
+        totalStock: 1,
+        itemCount: 1
+      }
+    },
+    { $sort: { totalStock: -1 } }
+  ]);
+
+  return stockByWh;
+};
+
 module.exports = {
-  getDashboardSummary
+  getDashboardSummary,
+  globalSearch,
+  getStockByWarehouse
 };

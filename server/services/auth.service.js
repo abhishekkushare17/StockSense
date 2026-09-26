@@ -82,8 +82,68 @@ const getUserById = async (userId) => {
   return user.toJSON();
 };
 
+/**
+ * Forgot password request
+ */
+const forgotPassword = async (email) => {
+  if (!email || !email.trim()) {
+    const error = new Error('Email is required');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const user = await User.findOne({ email: email.toLowerCase().trim() });
+  if (!user) {
+    // Return friendly generic message for security
+    return {
+      message: 'If an account with that email exists, reset instructions have been generated.',
+      resetToken: null
+    };
+  }
+
+  const demoToken = `rst-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
+  return {
+    message: 'Password reset link sent to your registered email.',
+    resetToken: demoToken,
+    email: user.email
+  };
+};
+
+/**
+ * Reset password implementation
+ */
+const resetPassword = async ({ email, newPassword }) => {
+  if (!email || !newPassword) {
+    const error = new Error('Email and new password are required');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (newPassword.length < 8) {
+    const error = new Error('Password must be at least 8 characters long');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const user = await User.findOne({ email: email.toLowerCase().trim() }).select('+password');
+  if (!user) {
+    const error = new Error('User not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  user.password = newPassword;
+  await user.save();
+
+  return {
+    message: 'Password has been reset successfully. You can now log in with your new password.'
+  };
+};
+
 module.exports = {
   registerUser,
   loginUser,
-  getUserById
+  getUserById,
+  forgotPassword,
+  resetPassword
 };

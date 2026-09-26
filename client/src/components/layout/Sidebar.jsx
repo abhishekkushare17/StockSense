@@ -17,7 +17,10 @@ import {
   LogOut,
   ChevronDown,
   X,
-  Shield
+  Shield,
+  BarChart2,
+  FileSpreadsheet,
+  ScrollText
 } from 'lucide-react';
 import { ROLES } from '../../utils/constants';
 
@@ -112,13 +115,13 @@ export const Sidebar = ({ isOpen, onClose }) => {
               <Layers className="w-4 h-4 shrink-0" />
               <span>Categories</span>
             </NavLink>
-            <NavLink to="/stock" className={navItemClass}>
-              <Boxes className="w-4 h-4 shrink-0" />
-              <span>Stock Levels</span>
-            </NavLink>
             <NavLink to="/warehouse" className={navItemClass}>
               <Warehouse className="w-4 h-4 shrink-0" />
               <span>Warehouse</span>
+            </NavLink>
+            <NavLink to="/stock" className={navItemClass}>
+              <Boxes className="w-4 h-4 shrink-0" />
+              <span>Stock Levels</span>
             </NavLink>
           </div>
 
@@ -156,14 +159,29 @@ export const Sidebar = ({ isOpen, onClose }) => {
                 </NavLink>
                 <NavLink to="/adjustments" className={subNavItemClass}>
                   <SlidersHorizontal className="w-3.5 h-3.5 shrink-0 text-indigo-600" />
-                  <span>Inventory Adjustments</span>
-                </NavLink>
-                <NavLink to="/move-history" className={subNavItemClass}>
-                  <History className="w-3.5 h-3.5 shrink-0 text-blue-600" />
-                  <span>Move History</span>
+                  <span>Adjustments</span>
                 </NavLink>
               </div>
             )}
+          </div>
+
+          {/* Intelligence & Audit Group */}
+          <div className="space-y-1">
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">
+              Auditing & Reports
+            </p>
+            <NavLink to="/move-history" className={navItemClass}>
+              <ScrollText className="w-4 h-4 shrink-0" />
+              <span>Stock Ledger</span>
+            </NavLink>
+            <NavLink to="/analytics" className={navItemClass}>
+              <BarChart2 className="w-4 h-4 shrink-0" />
+              <span>Analytics</span>
+            </NavLink>
+            <NavLink to="/reports" className={navItemClass}>
+              <FileSpreadsheet className="w-4 h-4 shrink-0" />
+              <span>Reports</span>
+            </NavLink>
           </div>
 
           {/* System & Profile Group */}

@@ -53,9 +53,39 @@ const logout = async (req, res, next) => {
   }
 };
 
+/**
+ * Forgot password
+ * POST /api/auth/forgot-password
+ */
+const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const result = await authService.forgotPassword(email);
+    return successResponse(res, result.message, result, 200);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Reset password
+ * POST /api/auth/reset-password
+ */
+const resetPassword = async (req, res, next) => {
+  try {
+    const { email, newPassword } = req.body;
+    const result = await authService.resetPassword({ email, newPassword });
+    return successResponse(res, result.message, result, 200);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
   getCurrentUser,
-  logout
+  logout,
+  forgotPassword,
+  resetPassword
 };

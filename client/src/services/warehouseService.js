@@ -53,3 +53,13 @@ export const deleteWarehouse = async (id) => {
     throw new Error(message);
   }
 };
+
+export const warehouseService = {
+  getWarehouses,
+  getWarehouseById,
+  createWarehouse,
+  updateWarehouse,
+  deleteWarehouse
+};
+
+export default warehouseService;

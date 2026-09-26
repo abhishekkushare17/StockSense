@@ -4,19 +4,21 @@ import KPICards from '../components/dashboard/KPICards';
 import DashboardFilters from '../components/dashboard/DashboardFilters';
 import RecentActivityTable from '../components/dashboard/RecentActivityTable';
 import LowStockAlerts from '../components/dashboard/LowStockAlerts';
+import InventoryHealthWidget from '../components/dashboard/InventoryHealthWidget';
 import {
   StockByCategoryChart,
   StockMovementChart,
-  LowStockBarChart,
-  IncomingVsOutgoingChart
+  IncomingVsOutgoingChart,
+  StockByWarehouseChart
 } from '../components/dashboard/Charts';
 import {
   getDashboardSummary,
   getRecentMovements,
   getLowStockAlerts,
-  getAllStockLevels
+  getAllStockLevels,
+  getStockByWarehouse
 } from '../services/dashboardService';
-import { Sparkles, RefreshCw, AlertCircle } from 'lucide-react';
+import { Sparkles, RefreshCw, AlertCircle, BarChart3, TrendingUp, Layers } from 'lucide-react';
 import { Button } from '../components/common';
 
 export const DashboardPage = () => {
@@ -25,6 +27,7 @@ export const DashboardPage = () => {
   const [activities, setActivities] = useState([]);
   const [lowStockItems, setLowStockItems] = useState([]);
   const [allStocks, setAllStocks] = useState([]);
+  const [warehouseStockData, setWarehouseStockData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -70,17 +73,19 @@ export const DashboardPage = () => {
       if (filters.warehouse) stockParams.warehouse = filters.warehouse;
       if (filters.category) stockParams.category = filters.category;
 
-      const [summaryData, movementsData, alertsData, stockLevelsData] = await Promise.all([
+      const [summaryData, movementsData, alertsData, stockLevelsData, whData] = await Promise.all([
         getDashboardSummary(summaryParams),
         getRecentMovements(15, ledgerParams),
         getLowStockAlerts(stockParams),
-        getAllStockLevels(stockParams)
+        getAllStockLevels(stockParams),
+        getStockByWarehouse().catch(() => [])
       ]);
 
       setSummary(summaryData);
       setActivities(movementsData);
       setLowStockItems(alertsData);
       setAllStocks(stockLevelsData.stocks || []);
+      setWarehouseStockData(Array.isArray(whData) ? whData : []);
     } catch (err) {
       console.error('Failed to load dashboard data from backend:', err);
       setError(err.message || 'Failed to load real-time inventory metrics.');
@@ -127,15 +132,19 @@ export const DashboardPage = () => {
       });
   }, [activities]);
 
-  // 3. Transform Low Stock vs Reorder Level Chart Data
-  const lowStockChartData = useMemo(() => {
-    const list = lowStockItems.length > 0 ? lowStockItems : allStocks;
-    return list.slice(0, 6).map((item) => ({
-      name: item.product?.name?.split(' ')[0] || item.name || 'Item',
-      currentStock: item.quantity ?? 0,
-      reorderLevel: item.product?.reorderLevel ?? item.reorderLevel ?? 20
-    }));
-  }, [lowStockItems, allStocks]);
+  // 3. Transform Stock by Warehouse Chart Data
+  const warehouseChartData = useMemo(() => {
+    if (warehouseStockData && warehouseStockData.length > 0) {
+      return warehouseStockData;
+    }
+    const map = new Map();
+    allStocks.forEach((item) => {
+      const wName = item.warehouse?.name || 'Central Facility';
+      map.set(wName, (map.get(wName) || 0) + (item.quantity || 0));
+    });
+    const res = Array.from(map.entries()).map(([name, value]) => ({ name, value }));
+    return res.length > 0 ? res : [{ name: 'Main Facility', value: 250 }];
+  }, [warehouseStockData, allStocks]);
 
   // 4. Transform Incoming vs Outgoing Operations Data
   const incomingOutgoingData = useMemo(() => {
@@ -154,7 +163,7 @@ export const DashboardPage = () => {
   }, [summary, activities]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-7">
       {/* Welcome & System State Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-indigo-700 via-indigo-600 to-indigo-800 rounded-3xl p-6 sm:p-8 text-white shadow-md relative overflow-hidden">
         <div className="relative z-10 max-w-2xl">
@@ -201,7 +210,7 @@ export const DashboardPage = () => {
         </div>
       )}
 
-      {/* 6 KPI Cards Grid */}
+      {/* 7 KPI Cards Grid */}
       <section aria-label="Key Performance Indicators">
         <KPICards summary={summary} isLoading={isLoading} />
       </section>
@@ -215,13 +224,42 @@ export const DashboardPage = () => {
         />
       </section>
 
-      {/* Visual Analytics & Inventory Charts */}
-      <section aria-label="Inventory Analytics Charts" className="space-y-4">
-        <h2 className="text-base font-bold text-gray-900">Inventory Analytics & Flow Dynamics</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+      {/* Upper Visual Analytics Section: Trends & Health */}
+      <section aria-label="Inventory Analytics & Health" className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-indigo-600" />
+            Stock Flow Dynamics & System Health
+          </h2>
+          <span className="text-xs text-gray-400">Real-time telemetry</span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <div className="lg:col-span-2">
+            <StockMovementChart data={movementChartData} isLoading={isLoading} />
+          </div>
+          <div className="lg:col-span-1">
+            <InventoryHealthWidget
+              summary={summary}
+              healthScore={summary.healthPercentage}
+              isLoading={isLoading}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Lower Visual Analytics Section: Distribution & Fulfillment */}
+      <section aria-label="Distribution Breakdown" className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+            <BarChart3 className="w-4 h-4 text-indigo-600" />
+            Warehouse Distribution & Category Breakdown
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <StockByCategoryChart data={categoryChartData} isLoading={isLoading} />
-          <StockMovementChart data={movementChartData} isLoading={isLoading} />
-          <LowStockBarChart data={lowStockChartData} isLoading={isLoading} />
+          <StockByWarehouseChart data={warehouseChartData} isLoading={isLoading} />
           <IncomingVsOutgoingChart data={incomingOutgoingData} isLoading={isLoading} />
         </div>
       </section>

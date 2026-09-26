@@ -80,6 +80,15 @@ export const LoginPage = () => {
           icon={Lock}
         />
 
+        <div className="flex items-center justify-end">
+          <Link
+            to="/forgot-password"
+            className="text-xs font-medium text-indigo-600 hover:text-indigo-500"
+          >
+            Forgot your password?
+          </Link>
+        </div>
+
         <div className="pt-2">
           <Button
             type="submit"

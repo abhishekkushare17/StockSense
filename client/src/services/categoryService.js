@@ -38,9 +38,11 @@ export const deleteCategory = async (id) => {
   }
 };
 
-export default {
+export const categoryService = {
   getCategories,
   createCategory,
   updateCategory,
   deleteCategory
 };
+
+export default categoryService;

@@ -8,6 +8,8 @@ const Delivery = require('./Delivery');
 const InternalTransfer = require('./InternalTransfer');
 const StockAdjustment = require('./StockAdjustment');
 const StockLedger = require('./StockLedger');
+const Notification = require('./Notification');
+const AuditLog = require('./AuditLog');
 
 module.exports = {
   User,
@@ -19,5 +21,7 @@ module.exports = {
   Delivery,
   InternalTransfer,
   StockAdjustment,
-  StockLedger
+  StockLedger,
+  Notification,
+  AuditLog
 };

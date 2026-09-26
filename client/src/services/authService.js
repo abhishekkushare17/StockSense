@@ -83,6 +83,22 @@ export const authService = {
     });
     return response.data;
   },
+
+  /**
+   * Request password reset
+   */
+  async forgotPassword(email) {
+    const response = await api.post('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  /**
+   * Reset password with new password
+   */
+  async resetPassword({ email, newPassword }) {
+    const response = await api.post('/auth/reset-password', { email, newPassword });
+    return response.data;
+  },
 };
 
 export default authService;

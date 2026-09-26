@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import Sidebar from '../components/layout/Sidebar';
+import { Breadcrumbs } from '../components/common';
 import api from '../services/api';
 
 export const MainLayout = () => {
@@ -48,6 +49,7 @@ export const MainLayout = () => {
         {/* Dynamic Page Content */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
+            <Breadcrumbs />
             <Outlet context={{ lowStockAlerts }} />
           </div>
         </main>
