@@ -4,6 +4,7 @@ import LoginPage from '../pages/LoginPage';
 import SignupPage from '../pages/SignupPage';
 import DashboardPage from '../pages/DashboardPage';
 import ProductsPage from '../pages/ProductsPage';
+import CategoriesPage from '../pages/CategoriesPage';
 import ReceiptsPage from '../pages/ReceiptsPage';
 import DeliveriesPage from '../pages/DeliveriesPage';
 import TransfersPage from '../pages/TransfersPage';
@@ -47,6 +48,7 @@ export const AppRoutes = () => {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/products" element={<ProductsPage />} />
+          <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/receipts" element={<ReceiptsPage />} />
           <Route path="/deliveries" element={<DeliveriesPage />} />
           <Route path="/transfers" element={<TransfersPage />} />

@@ -5,6 +5,7 @@ import {
   Boxes,
   LayoutDashboard,
   Package,
+  Layers,
   Warehouse,
   ClipboardList,
   Truck,
@@ -106,6 +107,10 @@ export const Sidebar = ({ isOpen, onClose }) => {
             <NavLink to="/products" className={navItemClass}>
               <Package className="w-4 h-4 shrink-0" />
               <span>Products</span>
+            </NavLink>
+            <NavLink to="/categories" className={navItemClass}>
+              <Layers className="w-4 h-4 shrink-0" />
+              <span>Categories</span>
             </NavLink>
             <NavLink to="/warehouse" className={navItemClass}>
               <Warehouse className="w-4 h-4 shrink-0" />
