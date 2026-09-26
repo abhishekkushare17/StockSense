@@ -44,8 +44,11 @@ export const getStockByWarehouse = async (warehouseId) => {
   }
 };
 
+export const getStockLevels = getAllStock;
+
 export const stockService = {
   getAllStock,
+  getStockLevels,
   getLowStockReport,
   getStockByProduct,
   getStockByWarehouse

@@ -21,6 +21,25 @@ import { Button, Badge, Input, ErrorMessage } from '../components/common';
 import { productService } from '../services/productService';
 import { stockService } from '../services/stockService';
 import { getRecentMovements } from '../services/dashboardService';
+// Fallback aliases for test or simulated barcodes
+const SKU_ALIASES = {
+  'st-rod-01': 'ROD-STL-001',
+  'st-rod': 'ROD-STL-001',
+  'rod-01': 'ROD-STL-001',
+  'off-chr-02': 'CHR-ERG-101',
+  'off-chr': 'CHR-ERG-101',
+  'cop-wir-04': 'WIR-CPR-500',
+  'saf-hlm-05': 'EQP-PLT-250',
+  'rod': 'ROD-STL-001',
+  'steel': 'ROD-STL-001',
+  'chair': 'CHR-ERG-101',
+  'desk': 'DSK-WOD-202',
+  'wire': 'WIR-CPR-500',
+  'lamp': 'LMP-LED-150',
+  'pallet': 'EQP-PLT-250'
+};
+
+const DEFAULT_DEMO_SKUS = ['ROD-STL-001', 'CHR-ERG-101', 'DSK-WOD-202', 'WIR-CPR-500', 'EQP-PLT-250'];
 
 export const ScannerPage = () => {
   const [skuInput, setSkuInput] = useState('');
@@ -30,31 +49,59 @@ export const ScannerPage = () => {
   const [productMovements, setProductMovements] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [availableProducts, setAvailableProducts] = useState([]);
 
   const navigate = useNavigate();
 
-  // Demo SKU presets
-  const demoSKUs = ['ST-ROD-01', 'OFF-CHR-02', 'COP-WIR-04', 'SAF-HLM-05'];
+  // Dynamic SKU presets derived from live products, with safe fallback
+  const demoSKUs = availableProducts.length > 0
+    ? availableProducts.slice(0, 5).map((p) => p.sku)
+    : DEFAULT_DEMO_SKUS;
 
   const handleLookupProduct = async (skuToSearch) => {
-    const targetSku = (skuToSearch || skuInput).trim();
-    if (!targetSku) {
+    const rawQuery = (skuToSearch || skuInput).trim();
+    if (!rawQuery) {
       setError('Please enter or scan a valid SKU code.');
       return;
     }
+
+    // Resolve any test/simulation alias
+    const normalizedKey = rawQuery.toLowerCase();
+    const targetSku = SKU_ALIASES[normalizedKey] || rawQuery;
 
     try {
       setIsLoading(true);
       setError('');
 
-      // 1. Fetch products matching SKU
+      // 1. Fetch products matching target SKU
       const res = await productService.getProducts({ search: targetSku });
-      const found = res.products?.find(
+      let found = res.products?.find(
         (p) => p.sku.toLowerCase() === targetSku.toLowerCase()
-      ) || res.products?.[0];
+      );
+
+      // Partial or first result match
+      if (!found && res.products?.length > 0) {
+        found = res.products.find(
+          (p) =>
+            p.sku.toLowerCase().includes(targetSku.toLowerCase()) ||
+            p.name.toLowerCase().includes(targetSku.toLowerCase())
+        ) || res.products[0];
+      }
+
+      // If still not found, fetch all products and attempt fuzzy match
+      if (!found) {
+        const allRes = await productService.getProducts({ limit: 50 });
+        const allList = allRes.products || [];
+        found = allList.find((p) =>
+          p.sku.toLowerCase() === targetSku.toLowerCase() ||
+          p.sku.toLowerCase().includes(targetSku.toLowerCase()) ||
+          p.name.toLowerCase().includes(targetSku.toLowerCase()) ||
+          p.sku.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() === targetSku.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()
+        );
+      }
 
       if (!found) {
-        setError(`No product found with SKU "${targetSku}".`);
+        setError(`No product found with SKU "${rawQuery}". Choose from available products below or try another code.`);
         setScannedProduct(null);
         setStockDetails([]);
         setProductMovements([]);
@@ -62,9 +109,10 @@ export const ScannerPage = () => {
       }
 
       setScannedProduct(found);
+      setSkuInput(found.sku);
 
       // 2. Fetch warehouse stock breakdown for this product
-      const stockRes = await stockService.getStockLevels({ product: found._id });
+      const stockRes = await stockService.getAllStock({ product: found._id });
       setStockDetails(stockRes.stocks || []);
 
       // 3. Fetch recent ledger movements for this product
@@ -77,12 +125,36 @@ export const ScannerPage = () => {
     }
   };
 
-  // Auto scan first demo SKU on load for immediate interactive demonstration
+  // On mount, load actual products and scan the first one
   useEffect(() => {
-    handleLookupProduct('ST-ROD-01');
+    let isMounted = true;
+    const initScanner = async () => {
+      try {
+        const res = await productService.getProducts({ limit: 20 });
+        const prods = res.products || [];
+        if (isMounted) {
+          setAvailableProducts(prods);
+          if (prods.length > 0) {
+            handleLookupProduct(prods[0].sku);
+          } else {
+            handleLookupProduct('ROD-STL-001');
+          }
+        }
+      } catch {
+        if (isMounted) {
+          handleLookupProduct('ROD-STL-001');
+        }
+      }
+    };
+    initScanner();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const totalCurrentStock = stockDetails.reduce((sum, s) => sum + (s.quantity || 0), 0);
+  const totalCurrentStock = scannedProduct?.totalStock !== undefined
+    ? scannedProduct.totalStock
+    : stockDetails.reduce((sum, s) => sum + (s.quantity || 0), 0);
   const reorderLvl = scannedProduct?.reorderLevel || 10;
   const isOutOfStock = totalCurrentStock === 0;
   const isLowStock = totalCurrentStock <= reorderLvl;
@@ -184,7 +256,7 @@ export const ScannerPage = () => {
                 <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder="e.g. ST-ROD-01 or enter numeric barcode"
+                  placeholder="e.g. ROD-STL-001 or enter numeric barcode"
                   value={skuInput}
                   onChange={(e) => setSkuInput(e.target.value)}
                   className="w-full pl-9 pr-3 py-2.5 text-xs bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500 font-mono"
