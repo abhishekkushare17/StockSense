@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { RECEIPT_STATUS } = require('../utils/constants');
+const { ALL_OPERATION_STATUSES } = require('../utils/constants');
 
 const receiptItemSchema = new mongoose.Schema(
   {
@@ -8,9 +8,13 @@ const receiptItemSchema = new mongoose.Schema(
       ref: 'Product',
       required: [true, 'Product reference is required']
     },
+    quantity: {
+      type: Number,
+      required: [true, 'Quantity is required'],
+      min: [1, 'Quantity must be at least 1']
+    },
     quantityReceived: {
       type: Number,
-      required: [true, 'Received quantity is required'],
       min: [1, 'Quantity must be at least 1']
     },
     unitCost: {
@@ -22,6 +26,12 @@ const receiptItemSchema = new mongoose.Schema(
   { _id: true }
 );
 
+receiptItemSchema.pre('validate', function (next) {
+  if (this.quantity && !this.quantityReceived) this.quantityReceived = this.quantity;
+  if (this.quantityReceived && !this.quantity) this.quantity = this.quantityReceived;
+  next();
+});
+
 const receiptSchema = new mongoose.Schema(
   {
     receiptNumber: {
@@ -31,9 +41,13 @@ const receiptSchema = new mongoose.Schema(
       uppercase: true,
       trim: true
     },
-    supplierName: {
+    supplier: {
       type: String,
       required: [true, 'Supplier name is required'],
+      trim: true
+    },
+    supplierName: {
+      type: String,
       trim: true
     },
     warehouse: {
@@ -52,27 +66,46 @@ const receiptSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: Object.values(RECEIPT_STATUS),
-      default: RECEIPT_STATUS.DRAFT
+      enum: ALL_OPERATION_STATUSES,
+      default: 'Draft'
     },
     receivedDate: {
       type: Date,
       default: Date.now
     },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
     receivedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: [true, 'Receiving user reference is required']
+      ref: 'User'
     },
     notes: {
       type: String,
-      trim: true
+      trim: true,
+      default: ''
     }
   },
   {
     timestamps: true
   }
 );
+
+receiptSchema.pre('validate', function (next) {
+  if (this.supplier && !this.supplierName) this.supplierName = this.supplier;
+  if (this.supplierName && !this.supplier) this.supplier = this.supplierName;
+  if (this.createdBy && !this.receivedBy) this.receivedBy = this.createdBy;
+  if (this.receivedBy && !this.createdBy) this.createdBy = this.receivedBy;
+  next();
+});
+
+receiptSchema.virtual('products').get(function () {
+  return this.items;
+});
+
+receiptSchema.set('toJSON', { virtuals: true });
+receiptSchema.set('toObject', { virtuals: true });
 
 const Receipt = mongoose.model('Receipt', receiptSchema);
 

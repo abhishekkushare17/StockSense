@@ -35,4 +35,8 @@ router.use('/warehouses', warehouseRoutes);
 const stockRoutes = require('./stock.routes');
 router.use('/stock', stockRoutes);
 
+// Receipt Routes
+const receiptRoutes = require('./receipt.routes');
+router.use('/receipts', receiptRoutes);
+
 module.exports = router;

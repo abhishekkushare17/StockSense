@@ -22,40 +22,41 @@ const TRANSACTION_TYPES = {
   ADJUSTMENT: 'ADJUSTMENT'
 };
 
-const RECEIPT_STATUS = {
-  DRAFT: 'draft',
-  COMPLETED: 'completed',
-  CANCELLED: 'cancelled'
+const OPERATION_STATUS = {
+  DRAFT: 'Draft',
+  WAITING: 'Waiting',
+  READY: 'Ready',
+  DONE: 'Done',
+  CANCELED: 'Canceled'
 };
 
-const DELIVERY_STATUS = {
-  DRAFT: 'draft',
-  PENDING: 'pending',
-  SHIPPED: 'shipped',
-  CANCELLED: 'cancelled'
-};
-
-const TRANSFER_STATUS = {
-  DRAFT: 'draft',
-  PENDING: 'pending',
-  IN_TRANSIT: 'in_transit',
-  COMPLETED: 'completed',
-  CANCELLED: 'cancelled'
-};
-
-const ADJUSTMENT_STATUS = {
-  DRAFT: 'draft',
-  APPLIED: 'applied',
-  CANCELLED: 'cancelled'
-};
+const ALL_OPERATION_STATUSES = [
+  'Draft',
+  'Waiting',
+  'Ready',
+  'Done',
+  'Canceled',
+  'draft',
+  'waiting',
+  'ready',
+  'done',
+  'canceled',
+  'completed',
+  'pending',
+  'shipped',
+  'in_transit',
+  'applied'
+];
 
 module.exports = {
   ROLES,
   ALL_ROLES,
   USER_STATUS,
   TRANSACTION_TYPES,
-  RECEIPT_STATUS,
-  DELIVERY_STATUS,
-  TRANSFER_STATUS,
-  ADJUSTMENT_STATUS
+  OPERATION_STATUS,
+  ALL_OPERATION_STATUSES,
+  RECEIPT_STATUS: OPERATION_STATUS,
+  DELIVERY_STATUS: OPERATION_STATUS,
+  TRANSFER_STATUS: OPERATION_STATUS,
+  ADJUSTMENT_STATUS: OPERATION_STATUS
 };
