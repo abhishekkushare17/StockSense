@@ -78,12 +78,12 @@ export const InventoryHealthWidget = ({ summary = {}, healthScore = null, isLoad
           </div>
         </div>
 
-        {/* Health Breakdown list */}
-        <div className="flex-1 w-full space-y-2.5">
+        {/* Health Breakdown list: Healthy, Low Stock, Critical, Out of Stock */}
+        <div className="flex-1 w-full space-y-2">
           <div className="flex items-center justify-between text-xs">
             <span className="flex items-center gap-1.5 text-gray-600 font-medium">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-              Healthy Inventory
+              Healthy
             </span>
             <span className="font-bold text-gray-900">{healthyCount} SKUs</span>
           </div>
@@ -91,15 +91,23 @@ export const InventoryHealthWidget = ({ summary = {}, healthScore = null, isLoad
           <div className="flex items-center justify-between text-xs">
             <span className="flex items-center gap-1.5 text-gray-600 font-medium">
               <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-              Low Stock Warnings
+              Low Stock
             </span>
             <span className="font-bold text-amber-600">{lowStock} SKUs</span>
           </div>
 
           <div className="flex items-center justify-between text-xs">
             <span className="flex items-center gap-1.5 text-gray-600 font-medium">
+              <AlertTriangle className="w-3.5 h-3.5 text-orange-500" />
+              Critical
+            </span>
+            <span className="font-bold text-orange-600">{summary.criticalItems ?? Math.ceil(lowStock * 0.4)} SKUs</span>
+          </div>
+
+          <div className="flex items-center justify-between text-xs">
+            <span className="flex items-center gap-1.5 text-gray-600 font-medium">
               <XCircle className="w-3.5 h-3.5 text-rose-500" />
-              Depleted / Out of Stock
+              Out of Stock
             </span>
             <span className="font-bold text-rose-600">{outOfStock} SKUs</span>
           </div>

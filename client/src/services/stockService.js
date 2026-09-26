@@ -43,3 +43,13 @@ export const getStockByWarehouse = async (warehouseId) => {
     throw new Error(message);
   }
 };
+
+export const stockService = {
+  getAllStock,
+  getLowStockReport,
+  getStockByProduct,
+  getStockByWarehouse
+};
+
+export default stockService;
+

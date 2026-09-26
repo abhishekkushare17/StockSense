@@ -20,7 +20,9 @@ import {
   Shield,
   BarChart2,
   FileSpreadsheet,
-  ScrollText
+  ScrollText,
+  QrCode,
+  ShieldAlert
 } from 'lucide-react';
 import { ROLES } from '../../utils/constants';
 
@@ -123,6 +125,10 @@ export const Sidebar = ({ isOpen, onClose }) => {
               <Boxes className="w-4 h-4 shrink-0" />
               <span>Stock Levels</span>
             </NavLink>
+            <NavLink to="/scanner" className={navItemClass}>
+              <QrCode className="w-4 h-4 shrink-0 text-indigo-500" />
+              <span>Barcode Scanner</span>
+            </NavLink>
           </div>
 
           {/* Operations Group (Expandable) */}
@@ -181,6 +187,10 @@ export const Sidebar = ({ isOpen, onClose }) => {
             <NavLink to="/reports" className={navItemClass}>
               <FileSpreadsheet className="w-4 h-4 shrink-0" />
               <span>Reports</span>
+            </NavLink>
+            <NavLink to="/audit-logs" className={navItemClass}>
+              <ShieldAlert className="w-4 h-4 shrink-0 text-rose-500" />
+              <span>Audit Log</span>
             </NavLink>
           </div>
 

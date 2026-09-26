@@ -9,6 +9,15 @@ const createTransfer = async (req, res, next) => {
   try {
     const userId = req.user ? req.user._id : null;
     const transfer = await transferService.createTransfer(req.body, userId);
+    const { logAudit } = require('../utils/auditLogger');
+    logAudit({
+      user: req.user,
+      action: 'Transfer Created',
+      module: 'Transfers',
+      recordId: transfer._id,
+      newValue: { transferNumber: transfer.transferNumber, source: transfer.sourceWarehouse, destination: transfer.destinationWarehouse },
+      ipAddress: req.ip || ''
+    });
     return successResponse(res, 'Internal transfer created successfully', { transfer }, 201);
   } catch (error) {
     next(error);

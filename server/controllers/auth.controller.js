@@ -23,6 +23,17 @@ const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     const result = await authService.loginUser({ email, password });
+    
+    // Log audit action
+    const { logAudit } = require('../utils/auditLogger');
+    logAudit({
+      user: result.user,
+      action: 'Login',
+      module: 'Auth',
+      recordId: result.user?._id,
+      ipAddress: req.ip || req.connection?.remoteAddress || ''
+    });
+
     return successResponse(res, 'Login successful', result, 200);
   } catch (error) {
     next(error);

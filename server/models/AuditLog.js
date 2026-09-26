@@ -12,14 +12,30 @@ const auditLogSchema = new mongoose.Schema(
       required: [true, 'Audit action is required'],
       trim: true
     },
+    module: {
+      type: String,
+      required: [true, 'Module is required'],
+      trim: true
+    },
     entityType: {
       type: String,
-      required: [true, 'Entity type is required'],
+      trim: true
+    },
+    recordId: {
+      type: String,
       trim: true
     },
     entityId: {
       type: String,
       trim: true
+    },
+    oldValue: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null
+    },
+    newValue: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null
     },
     details: {
       type: mongoose.Schema.Types.Mixed,
@@ -35,8 +51,9 @@ const auditLogSchema = new mongoose.Schema(
   }
 );
 
-auditLogSchema.index({ entityType: 1, entityId: 1, createdAt: -1 });
+auditLogSchema.index({ module: 1, action: 1, createdAt: -1 });
 auditLogSchema.index({ user: 1, createdAt: -1 });
+auditLogSchema.index({ recordId: 1 });
 
 const AuditLog = mongoose.model('AuditLog', auditLogSchema);
 

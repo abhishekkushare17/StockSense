@@ -36,10 +36,13 @@ export const deleteProduct = async (id) => {
   return response.data;
 };
 
-export default {
+export const productService = {
   getProducts,
   getProductById,
   createProduct,
   updateProduct,
   deleteProduct
 };
+
+export default productService;
+

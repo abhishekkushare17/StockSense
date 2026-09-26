@@ -33,8 +33,18 @@ const getStockByWarehouse = async (req, res, next) => {
   }
 };
 
+const getReorderRecommendations = async (req, res, next) => {
+  try {
+    const data = await dashboardService.getSmartReorderRecommendations(req.query);
+    return successResponse(res, 'Smart reorder recommendations generated successfully', data, 200);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getDashboardSummary,
   searchGlobal,
-  getStockByWarehouse
+  getStockByWarehouse,
+  getReorderRecommendations
 };

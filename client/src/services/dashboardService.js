@@ -58,11 +58,20 @@ export const getStockByWarehouse = async () => {
   return response.data?.data || [];
 };
 
+/**
+ * Fetch smart reorder recommendations
+ */
+export const getSmartReorderRecommendations = async (params = {}) => {
+  const response = await api.get('/dashboard/reorder-recommendations', { params });
+  return response.data?.data || [];
+};
+
 export default {
   getDashboardSummary,
   getRecentMovements,
   getLowStockAlerts,
   getAllStockLevels,
   searchGlobal,
-  getStockByWarehouse
+  getStockByWarehouse,
+  getSmartReorderRecommendations
 };

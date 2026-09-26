@@ -9,6 +9,15 @@ const createAdjustment = async (req, res, next) => {
   try {
     const userId = req.user ? req.user._id : null;
     const adjustment = await adjustmentService.createAdjustment(req.body, userId);
+    const { logAudit } = require('../utils/auditLogger');
+    logAudit({
+      user: req.user,
+      action: 'Adjustment Created',
+      module: 'Adjustments',
+      recordId: adjustment._id,
+      newValue: { difference: adjustment.difference, reason: adjustment.reason },
+      ipAddress: req.ip || ''
+    });
     return successResponse(res, 'Stock adjustment created successfully', { adjustment }, 201);
   } catch (error) {
     next(error);

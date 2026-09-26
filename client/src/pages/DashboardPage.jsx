@@ -5,6 +5,7 @@ import DashboardFilters from '../components/dashboard/DashboardFilters';
 import RecentActivityTable from '../components/dashboard/RecentActivityTable';
 import LowStockAlerts from '../components/dashboard/LowStockAlerts';
 import InventoryHealthWidget from '../components/dashboard/InventoryHealthWidget';
+import SmartReorderWidget from '../components/dashboard/SmartReorderWidget';
 import {
   StockByCategoryChart,
   StockMovementChart,
@@ -16,18 +17,36 @@ import {
   getRecentMovements,
   getLowStockAlerts,
   getAllStockLevels,
-  getStockByWarehouse
+  getStockByWarehouse,
+  getSmartReorderRecommendations
 } from '../services/dashboardService';
-import { Sparkles, RefreshCw, AlertCircle, BarChart3, TrendingUp, Layers } from 'lucide-react';
-import { Button } from '../components/common';
+import {
+  Sparkles,
+  RefreshCw,
+  AlertCircle,
+  BarChart3,
+  TrendingUp,
+  Layers,
+  Shield,
+  QrCode,
+  PackagePlus,
+  Truck,
+  ArrowRightLeft,
+  SlidersHorizontal
+} from 'lucide-react';
+import { Button, Badge } from '../components/common';
+import { ROLES } from '../utils/constants';
+import { useNavigate } from 'react-router-dom';
 
 export const DashboardPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [summary, setSummary] = useState({});
   const [activities, setActivities] = useState([]);
   const [lowStockItems, setLowStockItems] = useState([]);
   const [allStocks, setAllStocks] = useState([]);
   const [warehouseStockData, setWarehouseStockData] = useState([]);
+  const [reorderRecs, setReorderRecs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -38,6 +57,18 @@ export const DashboardPage = () => {
     warehouse: '',
     category: ''
   });
+
+  // Dynamic greeting based on time of day
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 18) return 'Good Afternoon';
+    return 'Good Evening';
+  }, []);
+
+  const userRole = user?.role || ROLES.INVENTORY_MANAGER;
+  const isStaff = userRole === ROLES.WAREHOUSE_STAFF;
+  const isAdminOrManager = userRole === ROLES.ADMIN || userRole === ROLES.INVENTORY_MANAGER;
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -61,7 +92,6 @@ export const DashboardPage = () => {
       setIsLoading(true);
       setError(null);
 
-      // Construct API query parameters based on active filters
       const summaryParams = {};
       if (filters.warehouse) summaryParams.warehouse = filters.warehouse;
 
@@ -73,19 +103,22 @@ export const DashboardPage = () => {
       if (filters.warehouse) stockParams.warehouse = filters.warehouse;
       if (filters.category) stockParams.category = filters.category;
 
-      const [summaryData, movementsData, alertsData, stockLevelsData, whData] = await Promise.all([
-        getDashboardSummary(summaryParams),
-        getRecentMovements(15, ledgerParams),
-        getLowStockAlerts(stockParams),
-        getAllStockLevels(stockParams),
-        getStockByWarehouse().catch(() => [])
-      ]);
+      const [summaryData, movementsData, alertsData, stockLevelsData, whData, recsData] =
+        await Promise.all([
+          getDashboardSummary(summaryParams),
+          getRecentMovements(15, ledgerParams),
+          getLowStockAlerts(stockParams),
+          getAllStockLevels(stockParams),
+          getStockByWarehouse().catch(() => []),
+          getSmartReorderRecommendations(stockParams).catch(() => [])
+        ]);
 
       setSummary(summaryData);
       setActivities(movementsData);
       setLowStockItems(alertsData);
       setAllStocks(stockLevelsData.stocks || []);
       setWarehouseStockData(Array.isArray(whData) ? whData : []);
+      setReorderRecs(Array.isArray(recsData) ? recsData : []);
     } catch (err) {
       console.error('Failed to load dashboard data from backend:', err);
       setError(err.message || 'Failed to load real-time inventory metrics.');
@@ -164,19 +197,52 @@ export const DashboardPage = () => {
 
   return (
     <div className="space-y-7">
-      {/* Welcome & System State Header */}
+      {/* Command Center Greeting & System State Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-indigo-700 via-indigo-600 to-indigo-800 rounded-3xl p-6 sm:p-8 text-white shadow-md relative overflow-hidden">
         <div className="relative z-10 max-w-2xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-indigo-100 text-xs font-semibold mb-3 backdrop-blur-xs border border-white/10">
             <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            Inventory Operations Command Center
+            Inventory Command Center &bull; {userRole}
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Welcome back, {user?.name || 'Manager'}
+            {greeting}, {user?.name || 'Manager'}
           </h1>
           <p className="mt-2 text-indigo-100 text-xs sm:text-sm leading-relaxed">
-            Monitor real-time warehouse fulfillment, track supply receipts, and manage inventory movements across your distribution network.
+            Here's your live inventory overview across warehouse facilities. All stock allocations are backed by immutable ledger audit records.
           </p>
+
+          {/* Quick Staff Actions Shortcut if Warehouse Staff */}
+          {isStaff && (
+            <div className="mt-4 flex items-center gap-2 flex-wrap">
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={QrCode}
+                onClick={() => navigate('/scanner')}
+                className="bg-white text-indigo-700 hover:bg-gray-100 font-bold text-xs"
+              >
+                Scan Barcode
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={PackagePlus}
+                onClick={() => navigate('/receipts')}
+                className="bg-white/10 hover:bg-white/20 text-white border-white/20 text-xs"
+              >
+                Receive Goods
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={Truck}
+                onClick={() => navigate('/deliveries')}
+                className="bg-white/10 hover:bg-white/20 text-white border-white/20 text-xs"
+              >
+                Dispatch Order
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="relative z-10 flex items-center gap-3">
@@ -210,12 +276,12 @@ export const DashboardPage = () => {
         </div>
       )}
 
-      {/* 7 KPI Cards Grid */}
+      {/* Top KPI Cards Grid (Total Stock, Low Stock, Out of Stock, Pending Receipts, Pending Deliveries, Scheduled Transfers) */}
       <section aria-label="Key Performance Indicators">
         <KPICards summary={summary} isLoading={isLoading} />
       </section>
 
-      {/* Filter Toolbar (Document Type, Status, Warehouse, Category) */}
+      {/* Dashboard Filter Toolbar */}
       <section aria-label="Dashboard Filters">
         <DashboardFilters
           filters={filters}
@@ -224,20 +290,23 @@ export const DashboardPage = () => {
         />
       </section>
 
-      {/* Upper Visual Analytics Section: Trends & Health */}
-      <section aria-label="Inventory Analytics & Health" className="space-y-4">
+      {/* Middle Section: Stock Movement Chart, Inventory Health, Warehouse Overview */}
+      <section aria-label="Command Center Middle Core" className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-indigo-600" />
-            Stock Flow Dynamics & System Health
+            Inventory Flow Dynamics & System Health
           </h2>
-          <span className="text-xs text-gray-400">Real-time telemetry</span>
+          <span className="text-xs text-gray-400">Telemetry feed</span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          {/* Stock Movement Chart */}
           <div className="lg:col-span-2">
             <StockMovementChart data={movementChartData} isLoading={isLoading} />
           </div>
+
+          {/* Inventory Health Ring Widget */}
           <div className="lg:col-span-1">
             <InventoryHealthWidget
               summary={summary}
@@ -248,31 +317,39 @@ export const DashboardPage = () => {
         </div>
       </section>
 
-      {/* Lower Visual Analytics Section: Distribution & Fulfillment */}
-      <section aria-label="Distribution Breakdown" className="space-y-4">
+      {/* Warehouse Overview & Category Breakdown */}
+      <section aria-label="Warehouse & Category Breakdown" className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
             <BarChart3 className="w-4 h-4 text-indigo-600" />
-            Warehouse Distribution & Category Breakdown
+            Warehouse Distribution & Fulfillment Velocity
           </h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <StockByCategoryChart data={categoryChartData} isLoading={isLoading} />
           <StockByWarehouseChart data={warehouseChartData} isLoading={isLoading} />
+          <StockByCategoryChart data={categoryChartData} isLoading={isLoading} />
           <IncomingVsOutgoingChart data={incomingOutgoingData} isLoading={isLoading} />
         </div>
       </section>
 
-      {/* Operations Activity & Low Stock Panels */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <section aria-label="Low Stock Alerts">
-          <LowStockAlerts items={lowStockItems} isLoading={isLoading} />
+      {/* Bottom Section: Low Stock Alerts, Recent Activity Feed, Smart Reorder Recommendations */}
+      <div className="space-y-6">
+        {/* Smart Reorder Recommendations Widget (Transparent Rule-Based Algorithm) */}
+        <section aria-label="Smart Reorder Recommendations">
+          <SmartReorderWidget initialData={reorderRecs} />
         </section>
 
-        <section aria-label="Recent Operations Ledger">
-          <RecentActivityTable activities={activities} isLoading={isLoading} />
-        </section>
+        {/* Operational Alerts & Activity Feed */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <section aria-label="Low Stock Alerts">
+            <LowStockAlerts items={lowStockItems} isLoading={isLoading} />
+          </section>
+
+          <section aria-label="Live Activity Feed">
+            <RecentActivityTable activities={activities} isLoading={isLoading} />
+          </section>
+        </div>
       </div>
     </div>
   );

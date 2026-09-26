@@ -17,6 +17,7 @@ import {
 import { Badge, Button, Loading, EmptyState, ConfirmDialog } from '../components/common';
 import WarehouseModal from '../components/warehouse/WarehouseModal';
 import WarehouseDetailModal from '../components/warehouse/WarehouseDetailModal';
+import WarehouseRackVisualizer from '../components/warehouse/WarehouseRackVisualizer';
 import {
   getWarehouses,
   getWarehouseById,
@@ -24,10 +25,13 @@ import {
   updateWarehouse,
   deleteWarehouse
 } from '../services/warehouseService';
+import { stockService } from '../services/stockService';
 
 export const WarehousePage = () => {
   const [warehouses, setWarehouses] = useState([]);
+  const [allStocks, setAllStocks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('racks'); // 'racks' or 'facilities'
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
@@ -57,8 +61,12 @@ export const WarehousePage = () => {
       if (search.trim()) params.search = search.trim();
       if (statusFilter) params.status = statusFilter;
 
-      const list = await getWarehouses(params);
+      const [list, stockData] = await Promise.all([
+        getWarehouses(params),
+        stockService.getStockLevels().catch(() => ({ stocks: [] }))
+      ]);
       setWarehouses(list);
+      setAllStocks(stockData.stocks || []);
     } catch (err) {
       setServerError(err.message || 'Failed to fetch warehouses.');
       setWarehouses([]);
@@ -214,6 +222,39 @@ export const WarehousePage = () => {
             Dismiss
           </button>
         </div>
+      )}
+
+      {/* View Switcher: 2D Rack & Bay Layout vs Facility Directory */}
+      <div className="flex items-center gap-2 border-b border-gray-200 pb-2">
+        <button
+          type="button"
+          onClick={() => setActiveTab('racks')}
+          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            activeTab === 'racks'
+              ? 'bg-indigo-600 text-white shadow-xs'
+              : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+          }`}
+        >
+          2D Bay & Rack Layout Map
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('facilities')}
+          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            activeTab === 'facilities'
+              ? 'bg-indigo-600 text-white shadow-xs'
+              : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+          }`}
+        >
+          Facility Directory ({warehouses.length})
+        </button>
+      </div>
+
+      {activeTab === 'racks' && (
+        <WarehouseRackVisualizer
+          warehouses={warehouses}
+          stocks={allStocks}
+        />
       )}
 
       {/* Filters & Search Bar */}

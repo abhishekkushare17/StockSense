@@ -16,6 +16,8 @@ const ROUTE_NAME_MAP = {
   ledger: 'Stock Ledger',
   analytics: 'Analytics',
   reports: 'Reports & Exports',
+  scanner: 'Barcode Scanner',
+  'audit-logs': 'Audit Logs',
   settings: 'System Settings',
   profile: 'User Profile'
 };
@@ -25,8 +27,10 @@ const PARENT_GROUP_MAP = {
   deliveries: 'Operations',
   transfers: 'Operations',
   adjustments: 'Operations',
+  scanner: 'Operations',
   'move-history': 'Auditing',
   ledger: 'Auditing',
+  'audit-logs': 'Auditing',
   analytics: 'Intelligence',
   reports: 'Intelligence'
 };

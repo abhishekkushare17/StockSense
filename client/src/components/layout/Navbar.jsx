@@ -21,15 +21,19 @@ import {
   Layers,
   X,
   Loader2,
-  FileSpreadsheet,
-  BarChart2
+  BarChart2,
+  Sun,
+  Moon,
+  QrCode
 } from 'lucide-react';
 import { ROLES } from '../../utils/constants';
 import { searchGlobal } from '../../services/dashboardService';
 import { notificationService } from '../../services/notificationService';
+import { useTheme } from '../../context/ThemeContext';
 
 export const Navbar = ({ onOpenSidebar }) => {
   const { user, logout } = useAuth();
+  const { theme, isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   // Dropdown states
@@ -334,14 +338,34 @@ export const Navbar = ({ onOpenSidebar }) => {
           </div>
         </div>
 
-        {/* Right Section: Facility, Notifications & Profile */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        {/* Right Section: Facility, Scanner, Theme, Notifications & Profile */}
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
           {/* Active Facility Indicator */}
           <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-xl text-xs font-medium text-gray-600 border border-gray-200/80">
             <Warehouse className="w-3.5 h-3.5 text-indigo-600" />
             <span>Facility:</span>
             <span className="text-gray-900 font-semibold">Central Hub</span>
           </div>
+
+          {/* Quick Scanner Shortcut */}
+          <Link
+            to="/scanner"
+            title="Scan Barcode / QR Code"
+            className="p-2 rounded-xl text-gray-500 hover:text-indigo-600 hover:bg-gray-100 transition-colors"
+          >
+            <QrCode className="w-5 h-5" />
+          </Link>
+
+          {/* Dark / Light Mode Switcher */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            className="p-2 rounded-xl text-gray-500 hover:text-indigo-600 hover:bg-gray-100 transition-colors"
+            aria-label="Toggle color theme"
+          >
+            {isDark ? <Sun className="w-5 h-5 text-amber-500" /> : <Moon className="w-5 h-5 text-gray-600" />}
+          </button>
 
           {/* Notification Bell Dropdown */}
           <div className="relative" ref={notificationRef}>

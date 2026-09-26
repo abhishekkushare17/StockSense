@@ -35,6 +35,15 @@ const getWarehouseById = async (req, res, next) => {
 const updateWarehouse = async (req, res, next) => {
   try {
     const warehouse = await warehouseService.updateWarehouse(req.params.id, req.body);
+    const { logAudit } = require('../utils/auditLogger');
+    logAudit({
+      user: req.user,
+      action: 'Warehouse Updated',
+      module: 'Warehouses',
+      recordId: warehouse._id,
+      newValue: req.body,
+      ipAddress: req.ip || ''
+    });
     return successResponse(res, 'Warehouse updated successfully', { warehouse }, 200);
   } catch (error) {
     next(error);

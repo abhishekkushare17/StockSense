@@ -64,4 +64,8 @@ router.use('/dashboard', dashboardRoutes);
 const notificationRoutes = require('./notification.routes');
 router.use('/notifications', notificationRoutes);
 
+// Audit Log Routes
+const auditLogRoutes = require('./auditLog.routes');
+router.use('/audit-logs', auditLogRoutes);
+
 module.exports = router;

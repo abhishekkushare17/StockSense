@@ -16,6 +16,8 @@ import WarehousePage from '../pages/WarehousePage';
 import StockPage from '../pages/StockPage';
 import AnalyticsPage from '../pages/AnalyticsPage';
 import ReportsPage from '../pages/ReportsPage';
+import ScannerPage from '../pages/ScannerPage';
+import AuditLogsPage from '../pages/AuditLogsPage';
 import ProfilePage from '../pages/ProfilePage';
 import SettingsPage from '../pages/SettingsPage';
 import MainLayout from '../layouts/MainLayout';
@@ -66,6 +68,8 @@ export const AppRoutes = () => {
           <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/warehouse" element={<WarehousePage />} />
+          <Route path="/scanner" element={<ScannerPage />} />
+          <Route path="/audit-logs" element={<AuditLogsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>

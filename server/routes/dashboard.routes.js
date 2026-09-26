@@ -8,5 +8,6 @@ router.use(protect);
 router.get('/summary', dashboardController.getDashboardSummary);
 router.get('/search', dashboardController.searchGlobal);
 router.get('/stock-by-warehouse', dashboardController.getStockByWarehouse);
+router.get('/reorder-recommendations', dashboardController.getReorderRecommendations);
 
 module.exports = router;
