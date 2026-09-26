@@ -273,10 +273,15 @@ export const ReportsPage = () => {
 
       {/* Printable Report Header (Visible only when printing to PDF) */}
       <div className="hidden print:block mb-6 border-b pb-4">
-        <h2 className="text-xl font-bold text-gray-900">StockSense Inventory System — Official Statement</h2>
-        <p className="text-xs text-gray-500 mt-1">
-          Generated on {new Date().toLocaleString()} &bull; Module: {reportType}
-        </p>
+        <div className="flex items-center gap-3 mb-2">
+          <img src="/logo.png" alt="StockSense Logo" className="w-10 h-10 object-cover rounded-lg border border-slate-300" />
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">StockSense Inventory System — Official Statement</h2>
+            <p className="text-xs text-gray-500">
+              Generated on {new Date().toLocaleString()} &bull; Module: {reportType}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Report Controls & Module Selector */}

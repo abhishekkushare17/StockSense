@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { Badge } from '../common';
+import { Badge, Logo } from '../common';
 import {
   Menu,
   Bell,
@@ -175,6 +175,11 @@ export const Navbar = ({ onOpenSidebar }) => {
           >
             <Menu className="w-5 h-5" />
           </button>
+
+          {/* Mobile Brand Logo */}
+          <Link to="/dashboard" className="lg:hidden shrink-0 flex items-center" aria-label="StockSense Home">
+            <Logo size="sm" showText={false} />
+          </Link>
 
           {/* Global Search with Live Dropdown */}
           <div className="relative w-full max-w-sm sm:max-w-md" ref={searchRef}>

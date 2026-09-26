@@ -27,6 +27,7 @@ import {
   Radar
 } from 'lucide-react';
 import { ROLES } from '../../utils/constants';
+import { Logo } from '../common';
 
 export const Sidebar = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
@@ -75,18 +76,8 @@ export const Sidebar = ({ isOpen, onClose }) => {
       {/* Brand Header */}
       <div>
         <div className="h-16 flex items-center justify-between px-5 border-b border-gray-100">
-          <NavLink to="/dashboard" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white flex items-center justify-center shadow-xs">
-              <Boxes className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-base font-extrabold text-gray-900 tracking-tight block leading-tight">
-                StockSense
-              </span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 block">
-                Inventory OS
-              </span>
-            </div>
+          <NavLink to="/dashboard" className="flex items-center gap-2.5 group">
+            <Logo size="md" subtitle="Inventory OS" />
           </NavLink>
 
           {/* Close button for mobile drawer */}

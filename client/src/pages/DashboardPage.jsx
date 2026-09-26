@@ -244,9 +244,9 @@ export const DashboardPage = () => {
       {/* Command Center Greeting & Hero Action Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden border border-white/10">
         <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-semibold mb-3 backdrop-blur-md border border-indigo-400/30">
-            <Sparkles className="w-3.5 h-3.5 text-indigo-300" />
-            StockSense Inventory Intelligence Platform &bull; {userRole}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-slate-200 text-xs font-semibold mb-3 backdrop-blur-md border border-white/15">
+            <img src="/logo.png" alt="StockSense Logo" className="w-4 h-4 rounded-md object-cover shrink-0" />
+            <span>StockSense Inventory Intelligence Platform &bull; {userRole}</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
             {greeting}, {user?.name || 'Inventory Lead'} 👋
@@ -300,7 +300,10 @@ export const DashboardPage = () => {
           </Button>
         </div>
 
-        {/* Ambient background decoration */}
+        {/* Ambient background decoration with subtle flight bird emblem */}
+        <div className="absolute -right-6 -bottom-6 w-44 h-44 opacity-10 pointer-events-none rounded-3xl overflow-hidden select-none">
+          <img src="/logo.png" alt="" className="w-full h-full object-cover" />
+        </div>
         <div className="absolute -right-10 -bottom-10 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
       </div>
 
