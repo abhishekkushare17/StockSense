@@ -9,11 +9,13 @@ const {
   StockLedger
 } = require('../models');
 
-const seedData = async () => {
+const seedData = async (exitOnComplete = true) => {
   try {
-    console.log('[Seed] Connecting to MongoDB at', env.mongoUri);
-    await mongoose.connect(env.mongoUri);
-    console.log('[Seed] MongoDB Connected successfully');
+    if (mongoose.connection.readyState !== 1) {
+      console.log('[Seed] Connecting to MongoDB at', env.mongoUri);
+      await mongoose.connect(env.mongoUri);
+      console.log('[Seed] MongoDB Connected successfully');
+    }
 
     // 1. Seed Default Users
     console.log('[Seed] Seeding Default Users...');
@@ -110,10 +112,16 @@ const seedData = async () => {
       await StockLedger.create({
         product: product._id,
         warehouse: warehouse._id,
+        operationType: 'RECEIPT',
         transactionType: 'RECEIPT',
+        referenceId: 'INIT-ROD-STL-001',
         referenceNumber: 'INIT-ROD-STL-001',
+        quantityBefore: 0,
+        quantityChange: 15,
         quantityChanged: 15,
+        quantityAfter: 15,
         balanceAfter: 15,
+        createdBy: manager._id,
         user: manager._id,
         notes: 'Initial seed inventory'
       });
@@ -134,11 +142,21 @@ const seedData = async () => {
     console.log('     Password: Password123!                       ');
     console.log('==================================================');
 
-    process.exit(0);
+    if (exitOnComplete) {
+      process.exit(0);
+    }
   } catch (error) {
     console.error('[Seed Error]:', error.message);
-    process.exit(1);
+    if (exitOnComplete) {
+      process.exit(1);
+    } else {
+      throw error;
+    }
   }
 };
 
-seedData();
+if (require.main === module) {
+  seedData(true);
+}
+
+module.exports = seedData;
