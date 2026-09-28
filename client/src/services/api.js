@@ -47,8 +47,9 @@ api.interceptors.response.use(
     // Extract standardized error message from backend
     const message =
       error.response?.data?.message ||
-      error.message ||
-      'An unexpected network error occurred';
+      (error.response?.status === 500
+        ? 'Server error or backend unreachable. Please ensure the backend is running.'
+        : error.message || 'An unexpected network error occurred');
 
     return Promise.reject(new Error(message));
   }
